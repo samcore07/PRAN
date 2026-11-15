@@ -24,6 +24,14 @@
     <link rel="stylesheet" href="css/reservations.css">
     <link rel="stylesheet" href="css/navigation.css">
     <link rel="stylesheet" href="css/bed-management.css">
+    <script>
+        (function() {
+            const saved = localStorage.getItem("PRAN_THEME");
+            const systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+            const theme = saved || (systemDark ? "dark" : "light");
+            document.documentElement.setAttribute("data-theme", theme);
+        })();
+    </script>
 </head>
 <body>
 
@@ -32,10 +40,15 @@
     <div class="auth-decoration"></div>
 
     <div class="auth-card">
-        <a class="brand auth-brand" href="#">
-            <span class="brand-symbol">✚</span>
-            <span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span>
-        </a>
+        <div class="auth-card-header">
+            <a class="brand auth-brand" href="#">
+                <span class="brand-symbol">✚</span>
+                <span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span>
+            </a>
+            <button class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle dark/light theme">
+                <span class="theme-icon">🌙</span>
+            </button>
+        </div>
 
         <div class="auth-intro">
             <span class="eyebrow">WELCOME TO PRAN</span>
@@ -83,7 +96,12 @@
 <section id="roleScreen" class="screen role-screen hidden">
     <header class="role-header">
         <a class="brand" href="#"><span class="brand-symbol">✚</span><span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span></a>
-        <button class="text-button" id="logoutFromRole">← Sign out</button>
+        <div class="header-actions">
+            <button class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle dark/light theme">
+                <span class="theme-icon">🌙</span>
+            </button>
+            <button class="text-button" id="logoutFromRole">← Sign out</button>
+        </div>
     </header>
 
     <div class="role-content">
@@ -143,6 +161,9 @@
             <button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰</button>
             <div class="breadcrumb">PRAN <span>/</span> <strong id="pageTitle">Overview</strong></div>
             <div class="topbar-right">
+                <button class="theme-toggle" type="button" aria-label="Toggle theme" title="Toggle dark/light theme">
+                    <span class="theme-icon">🌙</span>
+                </button>
                 <div class="top-user" id="topUser">G</div>
             </div>
         </header>

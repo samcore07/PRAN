@@ -318,4 +318,26 @@ Simplified user experience and removed unnecessary clutter:
    - Removed "DEMO MODE" pills, "Demo environment" sidebar indicators, and prototype notes.
    - Streamlined authentication labels and input fields.
    - Removed dead code across monolithic and modular codebases.
+
+10. DARK THEME IMPLEMENTATION
+--------------------------------------------------------------------------------
+Added full dark mode support across the entire PRAN platform:
+1. Cohesive Dark Color Palette:
+   - Deep charcoal background (#0d1117) and elevated card surfaces (#161b22, #21262d).
+   - High-contrast typography (#f0f6fc, #c9d1d9, #8b949e) for optimal legibility.
+   - Luminous emergency accent colors: vibrant blue (#388bfd), teal (#2dd4bf),
+     soft alert red (#f87171), and medical green (#34d399).
+   - Custom styling for Leaflet popups, hero banners, badges, tables, and map panels.
+
+2. One-Click Interactive Theme Toggle:
+   - Added theme toggle buttons (with dynamic moon 🌙 / sun ☀️ icons) accessible from:
+     • Login screen header
+     • Role selection top bar
+     • Application workspace topbar
+   - Smooth hover micro-interactions and transitions.
+
+3. Persistent & System-Aware State:
+   - Saves user selection to localStorage under 'PRAN_THEME'.
+   - Respects operating system prefers-color-scheme: dark on first visit.
+   - Inline anti-flash script in <head> prevents white flash on page load in dark mode.
 ================================================================================

@@ -120,10 +120,42 @@ function renderPage() {
 }
 
 /* ============================================
+   THEME MANAGER (DARK / LIGHT MODE)
+============================================ */
+function getPreferredTheme() {
+    const saved = localStorage.getItem("PRAN_THEME");
+    if (saved) return saved;
+    return window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
+
+function applyTheme(theme) {
+    document.documentElement.setAttribute("data-theme", theme);
+    localStorage.setItem("PRAN_THEME", theme);
+    document.querySelectorAll(".theme-icon").forEach(icon => {
+        icon.textContent = theme === "dark" ? "☀️" : "🌙";
+    });
+}
+
+function toggleTheme() {
+    const current = document.documentElement.getAttribute("data-theme") || "light";
+    const next = current === "dark" ? "light" : "dark";
+    applyTheme(next);
+}
+
+// Initial theme setup
+applyTheme(getPreferredTheme());
+
+/* ============================================
    GLOBAL CLICK ACTIONS
 ============================================ */
 
 document.addEventListener("click", event => {
+    const themeBtn = event.target.closest(".theme-toggle");
+    if (themeBtn) {
+        toggleTheme();
+        return;
+    }
+
     const go = event.target.closest("[data-go]");
     const map = event.target.closest("[data-map]");
     const book = event.target.closest("[data-book]");

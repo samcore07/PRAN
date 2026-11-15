@@ -229,3 +229,313 @@ p {
     line-height: 1.6;
     margin-top: 20px;
 }
+
+/* ============================================
+   DARK THEME PALETTE & OVERRIDES
+============================================ */
+
+[data-theme="dark"] {
+    --navy: #f0f6fc;
+    --blue: #388bfd;
+    --teal: #2dd4bf;
+    --red: #f87171;
+    --green: #34d399;
+    --purple: #a78bfa;
+    --text: #c9d1d9;
+    --muted: #8b949e;
+    --border: #30363d;
+    --bg: #0d1117;
+    --white: #161b22;
+    --card-bg: #161b22;
+    --card-surface: #21262d;
+    --card-hover: #1c2128;
+    --input-bg: #0d1117;
+    --input-focus: #161b22;
+    --shadow: 0 8px 28px rgba(0, 0, 0, .45);
+    --topbar-bg: #161b22ed;
+    --hero-bg: linear-gradient(115deg, #102235, #173752 70%, #114144);
+    --auth-side-bg: linear-gradient(145deg, #0d1721, #060b10);
+}
+
+/* Theme Toggle Button */
+.auth-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 9px;
+    border: 1px solid var(--border);
+    background: var(--white);
+    color: var(--text);
+    font-size: 15px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    flex-shrink: 0;
+}
+.theme-toggle:hover {
+    transform: translateY(-1px);
+    border-color: var(--blue);
+    background: #eaf4fb;
+}
+[data-theme="dark"] .theme-toggle {
+    background: #21262d;
+    border-color: #30363d;
+    color: #f0f6fc;
+}
+[data-theme="dark"] .theme-toggle:hover {
+    background: #30363d;
+    border-color: var(--blue);
+}
+
+/* Dark Theme Specific Overrides */
+[data-theme="dark"] body {
+    background: var(--bg);
+    color: var(--text);
+}
+[data-theme="dark"] .role-screen {
+    background: var(--bg);
+}
+[data-theme="dark"] .role-header {
+    background: var(--white);
+    border-color: var(--border);
+}
+[data-theme="dark"] .role-card {
+    background: var(--card-bg);
+    border-color: var(--border);
+    box-shadow: var(--shadow);
+}
+[data-theme="dark"] .role-card:hover {
+    border-color: var(--blue);
+    background: var(--card-hover);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.4);
+}
+[data-theme="dark"] .role-card strong {
+    color: var(--navy);
+}
+[data-theme="dark"] .sidebar {
+    background: var(--white);
+    border-color: var(--border);
+}
+[data-theme="dark"] .topbar {
+    background: var(--topbar-bg);
+    border-color: var(--border);
+}
+[data-theme="dark"] .auth-screen {
+    background: var(--bg);
+}
+[data-theme="dark"] .auth-decoration {
+    border-color: #21262d;
+}
+[data-theme="dark"] .auth-card {
+    background: var(--card-bg);
+    border-color: var(--border);
+}
+[data-theme="dark"] .auth-side {
+    background: var(--auth-side-bg);
+    border-color: var(--border);
+}
+[data-theme="dark"] .auth-feature {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .auth-feature strong {
+    color: #f0f6fc;
+}
+[data-theme="dark"] .auth-feature small {
+    color: #8b949e;
+}
+[data-theme="dark"] .auth-feature span {
+    background: rgba(56, 139, 253, 0.2);
+    color: #58a6ff;
+}
+[data-theme="dark"] .field input,
+[data-theme="dark"] .field select,
+[data-theme="dark"] .field textarea,
+[data-theme="dark"] .search-input {
+    background: var(--input-bg);
+    border-color: var(--border);
+    color: var(--text);
+}
+[data-theme="dark"] .field input:focus,
+[data-theme="dark"] .field select:focus,
+[data-theme="dark"] .field textarea:focus,
+[data-theme="dark"] .search-input:focus {
+    background: var(--input-focus);
+    border-color: var(--blue);
+}
+[data-theme="dark"] .panel,
+[data-theme="dark"] .stat-card,
+[data-theme="dark"] .quick-card,
+[data-theme="dark"] .hospital-card,
+[data-theme="dark"] .request-card,
+[data-theme="dark"] .reservation-card,
+[data-theme="dark"] .nav-detail-panel,
+[data-theme="dark"] .empty-state {
+    background: var(--card-bg);
+    border-color: var(--border);
+    box-shadow: var(--shadow);
+}
+[data-theme="dark"] .quick-card:hover {
+    background: var(--card-hover);
+    border-color: var(--blue);
+}
+[data-theme="dark"] .hero-panel {
+    background: var(--hero-bg);
+}
+[data-theme="dark"] .hero-panel h2 {
+    color: #f0f6fc;
+}
+[data-theme="dark"] .hero-panel .btn {
+    background: #f0f6fc;
+    color: #0d1117;
+}
+[data-theme="dark"] .btn-guest {
+    background: #21262d;
+    border-color: var(--border);
+    color: #c9d1d9;
+}
+[data-theme="dark"] .btn-guest:hover {
+    background: #30363d;
+    color: #f0f6fc;
+}
+[data-theme="dark"] .btn-light {
+    background: #21262d;
+    color: #58a6ff;
+}
+[data-theme="dark"] .btn-light:hover {
+    background: #30363d;
+}
+[data-theme="dark"] .bed-stat,
+[data-theme="dark"] .nav-metric-card {
+    background: #21262d;
+    border-color: var(--border);
+}
+[data-theme="dark"] .bed-stat strong,
+[data-theme="dark"] .nav-metric-card strong {
+    color: var(--navy);
+}
+[data-theme="dark"] .stat-icon.blue,
+[data-theme="dark"] .quick-icon,
+[data-theme="dark"] .hospital-symbol,
+[data-theme="dark"] .brand-symbol {
+    background: rgba(56, 139, 253, 0.16);
+    color: #58a6ff;
+}
+[data-theme="dark"] .stat-icon.green,
+[data-theme="dark"] .ambulance-icon {
+    background: rgba(52, 211, 153, 0.16);
+    color: #34d399;
+}
+[data-theme="dark"] .stat-icon.red,
+[data-theme="dark"] .patient-icon {
+    background: rgba(248, 113, 113, 0.16);
+    color: #f87171;
+}
+[data-theme="dark"] .stat-icon.purple {
+    background: rgba(167, 139, 250, 0.16);
+    color: #a78bfa;
+}
+[data-theme="dark"] .hospital-icon {
+    background: rgba(56, 139, 253, 0.16);
+    color: #58a6ff;
+}
+[data-theme="dark"] .summary-box {
+    background: #172635;
+    border-color: #26435f;
+}
+[data-theme="dark"] .summary-box strong {
+    color: #f0f6fc;
+}
+[data-theme="dark"] .tag {
+    background: #21262d;
+    color: #8b949e;
+}
+[data-theme="dark"] .nav-link {
+    color: #8b949e;
+}
+[data-theme="dark"] .nav-link:hover {
+    background: #21262d;
+    color: #58a6ff;
+}
+[data-theme="dark"] .nav-link.active {
+    background: rgba(56, 139, 253, 0.15);
+    color: #58a6ff;
+}
+[data-theme="dark"] .table-wrap {
+    background: var(--card-bg);
+    border-color: var(--border);
+}
+[data-theme="dark"] th {
+    background: #21262d;
+    color: #8b949e;
+    border-color: var(--border);
+}
+[data-theme="dark"] td {
+    color: var(--text);
+    border-color: var(--border);
+}
+[data-theme="dark"] td strong {
+    color: var(--navy);
+}
+[data-theme="dark"] .status-available,
+[data-theme="dark"] .status-accepted {
+    background: rgba(52, 211, 153, 0.15);
+    color: #34d399;
+}
+[data-theme="dark"] .status-limited,
+[data-theme="dark"] .status-pending {
+    background: rgba(251, 191, 36, 0.15);
+    color: #fbbf24;
+}
+[data-theme="dark"] .status-unavailable,
+[data-theme="dark"] .status-rejected {
+    background: rgba(248, 113, 113, 0.15);
+    color: #f87171;
+}
+[data-theme="dark"] .status-matching {
+    background: rgba(56, 139, 253, 0.15);
+    color: #58a6ff;
+}
+[data-theme="dark"] .leaflet-popup-content-wrapper,
+[data-theme="dark"] .leaflet-popup-tip {
+    background: #161b22;
+    color: #c9d1d9;
+    border: 1px solid #30363d;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+[data-theme="dark"] .leaflet-popup-content strong {
+    color: #f0f6fc;
+}
+[data-theme="dark"] .leaflet-container {
+    background: #0d1117;
+}
+[data-theme="dark"] .nav-map-wrap {
+    background-color: #0d1117;
+    border-color: var(--border);
+}
+[data-theme="dark"] .map-panel {
+    background-color: #121d28;
+    border-color: #23384c;
+    background-image: linear-gradient(35deg, transparent 47%, #1c2e3f 48%, #1c2e3f 50%, transparent 51%), linear-gradient(120deg, transparent 47%, #1c2e3f 48%, #1c2e3f 50%, transparent 51%);
+}
+[data-theme="dark"] .role-chip {
+    background: rgba(56, 139, 253, 0.15);
+    color: #58a6ff;
+}
+[data-theme="dark"] .toast {
+    background: #21262d;
+    color: #f0f6fc;
+    border: 1px solid #30363d;
+}
