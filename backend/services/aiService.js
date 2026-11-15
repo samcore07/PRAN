@@ -48,26 +48,50 @@ function getAiStatus(customKey) {
 }
 
 /**
- * Perform an HTTP POST request to Groq API
+ * Perform an HTTP POST request to Groq API using native fetch (or https.request fallback)
  */
-function callGroqApi(messages, options = {}) {
-  return new Promise((resolve, reject) => {
-    const key = getGroqKey(options.apiKey);
-    if (!key || key.includes('your_groq_api_key')) {
-      return reject(new Error('GROQ_API_KEY is not configured in .env, Vercel, or request'));
-    }
+async function callGroqApi(messages, options = {}) {
+  const key = getGroqKey(options.apiKey);
+  if (!key || key.includes('your_groq_api_key')) {
+    throw new Error('GROQ_API_KEY is not configured in Vercel environment variables');
+  }
 
-    const activeModel = options.model || getGroqModel();
-    const payload = JSON.stringify({
-      model: activeModel,
-      messages,
-      temperature: options.temperature ?? 0.2,
-      max_tokens: options.max_tokens ?? 1024,
-      response_format: options.json ? { type: 'json_object' } : undefined
+  const activeModel = options.model || getGroqModel();
+  const payload = {
+    model: activeModel,
+    messages,
+    temperature: options.temperature ?? 0.2,
+    max_tokens: options.max_tokens ?? 1024
+  };
+  if (options.json) {
+    payload.response_format = { type: 'json_object' };
+  }
+
+  // Modern Node 18+ and Vercel serverless native fetch
+  if (typeof fetch === 'function') {
+    const res = await fetch(GROQ_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${key}`
+      },
+      body: JSON.stringify(payload)
     });
 
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(`Groq API returned HTTP ${res.status}: ${errText}`);
+    }
+
+    const json = await res.json();
+    return json.choices?.[0]?.message?.content || '';
+  }
+
+  // Fallback to https.request
+  return new Promise((resolve, reject) => {
+    const payloadStr = JSON.stringify(payload);
     const url = new URL(GROQ_ENDPOINT);
-    const reqOptions = {
+    const req = https.request({
       hostname: url.hostname,
       port: 443,
       path: url.pathname,
@@ -75,21 +99,18 @@ function callGroqApi(messages, options = {}) {
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${key}`,
-        'Content-Length': Buffer.byteLength(payload)
+        'Content-Length': Buffer.byteLength(payloadStr)
       },
-      timeout: 12000
-    };
-
-    const req = https.request(reqOptions, (res) => {
+      timeout: 15000
+    }, (res) => {
       let data = '';
       res.on('data', chunk => { data += chunk; });
       res.on('end', () => {
         if (res.statusCode >= 200 && res.statusCode < 300) {
           try {
             const parsed = JSON.parse(data);
-            const content = parsed.choices?.[0]?.message?.content || '';
-            resolve(content);
-          } catch (e) {
+            resolve(parsed.choices?.[0]?.message?.content || '');
+          } catch(e) {
             reject(new Error('Failed to parse Groq response: ' + e.message));
           }
         } else {
@@ -98,13 +119,12 @@ function callGroqApi(messages, options = {}) {
       });
     });
 
-    req.on('error', err => reject(err));
+    req.on('error', reject);
     req.on('timeout', () => {
       req.destroy();
-      reject(new Error('Groq API request timed out (12s limit)'));
+      reject(new Error('Groq API request timed out'));
     });
-
-    req.write(payload);
+    req.write(payloadStr);
     req.end();
   });
 }

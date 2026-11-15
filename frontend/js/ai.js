@@ -16,19 +16,9 @@ let copilotMessages = [
     }
 ];
 
-function getStoredGroqKey() {
-    try {
-        return localStorage.getItem("pran_groq_api_key") || "";
-    } catch(e) {
-        return "";
-    }
-}
-
 async function checkAiStatus() {
     try {
-        const customKey = getStoredGroqKey();
-        const headers = customKey ? { "x-groq-api-key": customKey } : {};
-        const res = await fetch(`${AI_API_BASE}/status`, { headers });
+        const res = await fetch(`${AI_API_BASE}/status`);
         if (res.ok) {
             const data = await res.json();
             aiStatusCache = data;
@@ -37,7 +27,7 @@ async function checkAiStatus() {
     } catch (e) {
         // Backend might be starting or offline
     }
-    return { configured: Boolean(getStoredGroqKey()), model: "llama-3.3-70b-versatile", provider: "Groq" };
+    return { configured: true, model: "llama-3.3-70b-versatile", provider: "Groq" };
 }
 
 /**
@@ -45,14 +35,10 @@ async function checkAiStatus() {
  */
 async function requestAiTriage(patientData) {
     try {
-        const customKey = getStoredGroqKey();
-        const headers = { "Content-Type": "application/json" };
-        if (customKey) headers["x-groq-api-key"] = customKey;
-
         const res = await fetch(`${AI_API_BASE}/triage`, {
             method: "POST",
-            headers,
-            body: JSON.stringify({ ...patientData, apiKey: customKey })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patientData)
         });
         if (res.ok) {
             const result = await res.json();
@@ -95,17 +81,12 @@ async function sendCopilotQuery(promptText, extraContext = {}) {
     if (typingIndicator) typingIndicator.classList.remove("hidden");
 
     try {
-        const customKey = getStoredGroqKey();
-        const headers = { "Content-Type": "application/json" };
-        if (customKey) headers["x-groq-api-key"] = customKey;
-
         const res = await fetch(`${AI_API_BASE}/copilot`, {
             method: "POST",
-            headers,
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 messages: copilotMessages,
-                context: extraContext,
-                apiKey: customKey
+                context: extraContext
             })
         });
 

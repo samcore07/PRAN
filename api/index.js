@@ -101,8 +101,13 @@ module.exports = async (req, res) => {
     return;
   }
 
-  // Parse body
+  // Parse body safely
   let body = req.body || null;
+  if (typeof body === 'string') {
+    try {
+      body = JSON.parse(body);
+    } catch (e) {}
+  }
   if (!body && (req.method === 'POST' || req.method === 'PUT')) {
     body = await new Promise((resolve) => {
       let data = '';

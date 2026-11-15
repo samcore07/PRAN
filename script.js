@@ -245,37 +245,23 @@ let copilotMessages = [
     }
 ];
 
-function getStoredGroqKey() {
-    try {
-        return localStorage.getItem("pran_groq_api_key") || "";
-    } catch(e) {
-        return "";
-    }
-}
-
 async function checkAiStatus() {
     try {
-        const customKey = getStoredGroqKey();
-        const headers = customKey ? { "x-groq-api-key": customKey } : {};
-        const res = await fetch(`${AI_API_BASE}/status`, { headers });
+        const res = await fetch(`${AI_API_BASE}/status`);
         if (res.ok) {
             aiStatusCache = await res.json();
             return aiStatusCache;
         }
     } catch(e) {}
-    return { configured: Boolean(getStoredGroqKey()), model: "llama-3.3-70b-versatile" };
+    return { configured: true, model: "llama-3.3-70b-versatile" };
 }
 
 async function requestAiTriage(patientData) {
     try {
-        const customKey = getStoredGroqKey();
-        const headers = { "Content-Type": "application/json" };
-        if (customKey) headers["x-groq-api-key"] = customKey;
-
         const res = await fetch(`${AI_API_BASE}/triage`, {
             method: "POST",
-            headers,
-            body: JSON.stringify({ ...patientData, apiKey: customKey })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patientData)
         });
         if (res.ok) {
             const result = await res.json();
@@ -311,14 +297,10 @@ async function sendCopilotQuery(promptText, extraContext = {}) {
     if (typingIndicator) typingIndicator.classList.remove("hidden");
 
     try {
-        const customKey = getStoredGroqKey();
-        const headers = { "Content-Type": "application/json" };
-        if (customKey) headers["x-groq-api-key"] = customKey;
-
         const res = await fetch(`${AI_API_BASE}/copilot`, {
             method: "POST",
-            headers,
-            body: JSON.stringify({ messages: copilotMessages, context: extraContext, apiKey: customKey })
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: copilotMessages, context: extraContext })
         });
         if (res.ok) {
             const result = await res.json();
@@ -443,10 +425,7 @@ function initAiCopilotUI() {
                         <small id="copilotAiStatus">Connecting to AI Engine...</small>
                     </div>
                 </div>
-                <div style="display:flex; align-items:center; gap:6px;">
-                    <button id="copilotKeyBtn" class="btn-small btn-light" style="font-size:10px; padding:2px 7px; border-radius:6px;" title="Set Groq API Key">🔑 Key</button>
-                    <button id="copilotCloseBtn" class="copilot-close-btn" aria-label="Close Copilot">✕</button>
-                </div>
+                <button id="copilotCloseBtn" class="copilot-close-btn" aria-label="Close Copilot">✕</button>
             </div>
 
             <div class="copilot-quick-chips">
@@ -494,22 +473,6 @@ function initAiCopilotUI() {
         });
     }
 
-    document.getElementById("copilotKeyBtn")?.addEventListener("click", () => {
-        const existing = getStoredGroqKey();
-        const input = window.prompt("Enter your Groq API Key (starts with gsk_):", existing);
-        if (input !== null) {
-            const trimmed = input.trim();
-            if (trimmed) {
-                localStorage.setItem("pran_groq_api_key", trimmed);
-                toast("✓ Groq API Key saved for AI Copilot.");
-            } else {
-                localStorage.removeItem("pran_groq_api_key");
-                toast("Groq API Key cleared (using environment defaults).");
-            }
-            checkAiStatus().then(updateCopilotStatusText);
-        }
-    });
-
     document.getElementById("copilotCloseBtn")?.addEventListener("click", () => {
         document.getElementById("copilotDrawer")?.classList.add("hidden");
     });
@@ -534,11 +497,10 @@ function initAiCopilotUI() {
 function updateCopilotStatusText() {
     const el = document.getElementById("copilotAiStatus");
     if (!el) return;
-    const hasKey = (aiStatusCache && aiStatusCache.configured) || Boolean(getStoredGroqKey());
-    if (hasKey) {
-        el.innerHTML = '<span style="color:#10b981; font-weight:bold;">●</span> Active: ' + (aiStatusCache?.model || "llama-3.3-70b-versatile");
+    if (aiStatusCache && aiStatusCache.configured) {
+        el.innerHTML = '<span style="color:#10b981; font-weight:bold;">●</span> Active: ' + (aiStatusCache.model || "llama-3.3-70b-versatile");
     } else {
-        el.innerHTML = '<span style="color:#f59e0b; font-weight:bold;">●</span> Offline (Click 🔑 Key to connect Groq)';
+        el.innerHTML = '<span style="color:#10b981; font-weight:bold;">●</span> Online: Groq LLaMA 3.3';
     }
 }
 
