@@ -952,6 +952,12 @@ function requestCard(r, showActions = true) {
                         <button class="btn-small btn-success" data-accept="${r.id}">✓ Admit Patient</button>
                         <button class="btn-small btn-danger" data-reject="${r.id}">Divert / Reject</button>
                     ` : ""}
+                    ${currentRole === "ambulance" && (r.status === "Matching" || r.status === "Pending") ? `
+                        <button class="btn-small btn-primary" data-amb-accept="${r.id}">🚨 Accept Mission</button>
+                    ` : ""}
+                    ${currentRole === "ambulance" && (r.status === "Dispatched" || r.status === "On Scene" || r.status === "In Transit") ? `
+                        <button class="btn-small btn-success" data-go="overview">🚑 Open Cockpit HUD</button>
+                    ` : ""}
                     ${h ? `<button class="btn-small btn-light" data-map="${h.id}">➤ Live Navigation</button>` : ""}
                     ${triage ? `<button class="btn-small btn-light" data-view-triage="${r.id}">⚡ Triage Details</button>` : ""}
                 </div>
@@ -1812,44 +1818,539 @@ function openDirections(destCoords) {
 }
 
 /* ============================================
-   AMBULANCE OPERATOR DASHBOARD
+   AMBULANCE DRIVER COCKPIT & DISPATCH SIMULATOR
 ============================================ */
 
+let ambulanceFilter = "all";
+
+const DEFAULT_AMBULANCE_UNIT = {
+    callSign: "WB-04-ALS-9821",
+    model: "Tata Winger ALS (Type D Emergency Unit)",
+    driverName: "Capt. Rajesh Das",
+    paramedicName: "Sunita Roy, EMT-P",
+    dutyStatus: "available", // "available", "dispatched", "on_scene", "in_transit", "handover", "off_duty"
+    activeRequestId: null,
+    targetHospitalId: 1,
+    sirenActive: false,
+    fuel: 86,
+    oxygenPsi: 1850,
+    cabinTemp: 19.5,
+    recentMissions: [
+        {
+            id: 1794750001,
+            patient: "Subhajit Chatterjee",
+            time: "24 mins ago",
+            outcome: "Admitted to Calcutta Heart Clinic ER (ICU Bed 04)",
+            code: "CODE_RED"
+        }
+    ]
+};
+
+function loadAmbulanceState() {
+    try {
+        const saved = localStorage.getItem("pran_ambulance_unit_state");
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && parsed.callSign) return parsed;
+        }
+    } catch(e) {}
+    return { ...DEFAULT_AMBULANCE_UNIT };
+}
+
+let ambulanceUnit = loadAmbulanceState();
+
+function saveAmbulanceState() {
+    try {
+        localStorage.setItem("pran_ambulance_unit_state", JSON.stringify(ambulanceUnit));
+    } catch(e) {}
+}
+
+function playEmergencyChime(isSiren = false) {
+    try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        if (ctx.state === "suspended") ctx.resume();
+
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        const now = ctx.currentTime;
+        if (isSiren) {
+            osc.type = "sawtooth";
+            osc.frequency.setValueAtTime(600, now);
+            osc.frequency.linearRampToValueAtTime(900, now + 0.35);
+            osc.frequency.linearRampToValueAtTime(600, now + 0.7);
+            gain.gain.setValueAtTime(0.12, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.75);
+            osc.start(now);
+            osc.stop(now + 0.8);
+        } else {
+            osc.type = "sine";
+            osc.frequency.setValueAtTime(880, now);
+            osc.frequency.setValueAtTime(700, now + 0.12);
+            osc.frequency.setValueAtTime(880, now + 0.24);
+            gain.gain.setValueAtTime(0.2, now);
+            gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+            osc.start(now);
+            osc.stop(now + 0.48);
+        }
+    } catch(e) {}
+}
+
+function simulateIncomingEmergency() {
+    const kolkataCases = [
+        {
+            patientName: "Dr. Anirban Roy (Emergency Call)",
+            age: 52,
+            contact: "9830554321",
+            category: "Cardiac",
+            facility: "ICU",
+            location: "Salt Lake Sector V, Godrej Waterside",
+            notes: "Acute retrosternal crushing chest pain radiating to left arm. Diaphoresis, SpO2 91%. Suspected acute STEMI.",
+            vitals: { heartRate: 118, systolicBP: 160, spo2: 91, consciousness: "Alert" },
+            code: "CODE_RED"
+        },
+        {
+            patientName: "Priyanka Mukherjee (Emergency Call)",
+            age: 29,
+            contact: "9831998877",
+            category: "Accident",
+            facility: "General",
+            location: "College More, Sector V (Near RDB Cinema)",
+            notes: "Two-wheeler skid collision. Lacerations to forearm, severe contusion on right knee, hemodynamically stable.",
+            vitals: { heartRate: 94, systolicBP: 125, spo2: 97, consciousness: "Alert" },
+            code: "CODE_YELLOW"
+        },
+        {
+            patientName: "Debashis Ganguly (Emergency Call)",
+            age: 63,
+            contact: "9830112233",
+            category: "Neurological",
+            facility: "ICU",
+            location: "Karunamoyee Central Bus Station, Sector II",
+            notes: "Acute onset right hemiparesis and facial asymmetry with expressive aphasia. Last known well 40 mins ago.",
+            vitals: { heartRate: 88, systolicBP: 175, spo2: 95, consciousness: "Confused" },
+            code: "CODE_RED"
+        }
+    ];
+
+    const pick = kolkataCases[Math.floor(Math.random() * kolkataCases.length)];
+    const newReq = {
+        id: Date.now(),
+        patientName: pick.patientName,
+        age: pick.age,
+        contact: pick.contact,
+        category: pick.category,
+        facility: pick.facility,
+        location: pick.location,
+        notes: pick.notes,
+        vitals: pick.vitals,
+        status: "Matching",
+        hospitalId: 1,
+        owner: "guest",
+        createdAt: new Date().toISOString(),
+        aiAssessment: {
+            code: pick.code,
+            severity: pick.code === "CODE_RED" ? "CRITICAL" : "URGENT",
+            triageScore: pick.code === "CODE_RED" ? 94 : 70,
+            recommendedWard: pick.facility,
+            clinicalSummary: pick.notes,
+            vitalAlerts: pick.code === "CODE_RED" ? ["Critical Alert: Acute cardiovascular / neurological risk"] : []
+        }
+    };
+
+    data.requests.push(newReq);
+    saveData();
+    playEmergencyChime();
+    toast(`🚨 108 Emergency Dispatch Received: ${pick.patientName}`);
+    renderPage();
+}
+
+function renderAmbulanceVehicleCard() {
+    return `
+        <div class="amb-vehicle-card">
+            <div class="amb-header-row">
+                <div class="amb-unit-title">
+                    <span class="amb-callsign-pill">${safe(ambulanceUnit.callSign)}</span>
+                    <div>
+                        <h2>${safe(ambulanceUnit.model)}</h2>
+                        <div class="amb-crew-info">Crew: <strong>${safe(ambulanceUnit.driverName)}</strong> (Driver) · <strong>${safe(ambulanceUnit.paramedicName)}</strong></div>
+                    </div>
+                </div>
+
+                <div class="amb-header-controls">
+                    <button type="button" class="amb-siren-toggle ${ambulanceUnit.sirenActive ? 'active' : ''}" data-amb-siren="true" title="Toggle audio-visual emergency siren">
+                        <span>${ambulanceUnit.sirenActive ? '🚨 Siren: ACTIVE' : '🔇 Siren: OFF'}</span>
+                    </button>
+
+                    <select class="amb-duty-select" id="ambDutySelect" title="Update driver duty state">
+                        <option value="available" ${ambulanceUnit.dutyStatus === 'available' ? 'selected' : ''}>🟢 Available on Duty</option>
+                        <option value="dispatched" ${ambulanceUnit.dutyStatus === 'dispatched' ? 'selected' : ''}>🟡 En Route to Patient</option>
+                        <option value="on_scene" ${ambulanceUnit.dutyStatus === 'on_scene' ? 'selected' : ''}>🟠 On Scene / Stabilizing</option>
+                        <option value="in_transit" ${ambulanceUnit.dutyStatus === 'in_transit' ? 'selected' : ''}>🚨 Transit to Hospital ER</option>
+                        <option value="handover" ${ambulanceUnit.dutyStatus === 'handover' ? 'selected' : ''}>🔵 At Hospital ER Bay</option>
+                        <option value="off_duty" ${ambulanceUnit.dutyStatus === 'off_duty' ? 'selected' : ''}>⚪ Off Duty</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="amb-telemetry-grid">
+                <div class="amb-telemetry-tile">
+                    <span class="amb-telemetry-icon">⛽</span>
+                    <div class="amb-telemetry-text">
+                        <small>Fuel Level</small>
+                        <strong>${ambulanceUnit.fuel}% (~340 km)</strong>
+                    </div>
+                </div>
+                <div class="amb-telemetry-tile">
+                    <span class="amb-telemetry-icon">💨</span>
+                    <div class="amb-telemetry-text">
+                        <small>O2 Reserve</small>
+                        <strong>${ambulanceUnit.oxygenPsi} PSI (High)</strong>
+                    </div>
+                </div>
+                <div class="amb-telemetry-tile">
+                    <span class="amb-telemetry-icon">⚡</span>
+                    <div class="amb-telemetry-text">
+                        <small>AED Defibrillator</small>
+                        <strong>Operational ✓</strong>
+                    </div>
+                </div>
+                <div class="amb-telemetry-tile">
+                    <span class="amb-telemetry-icon">❄️</span>
+                    <div class="amb-telemetry-text">
+                        <small>Cabin Climate</small>
+                        <strong>${ambulanceUnit.cabinTemp}°C Ready</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function renderIncomingDispatchAlert() {
+    const incoming = (data.requests || []).find(r => 
+        (r.status === "Matching" || r.status === "Pending") &&
+        r.id !== ambulanceUnit.activeRequestId
+    );
+
+    if (!incoming || ambulanceUnit.activeRequestId) {
+        return `
+            <div class="summary-box" style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:16px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <span style="font-size:22px;">📡</span>
+                    <div>
+                        <strong style="color:var(--navy); font-size:14px;">108 Radio Dispatch Channel Active</strong>
+                        <p style="margin:2px 0 0 0; color:var(--muted); font-size:12px;">Sector V Fleet Monitoring: Scanning for incoming calls in Salt Lake & New Town corridor.</p>
+                    </div>
+                </div>
+                <button class="btn btn-secondary btn-small" data-amb-sim-call="true">
+                    <span>🚨 Simulate Incoming 108 Emergency Call</span>
+                </button>
+            </div>
+        `;
+    }
+
+    const triage = incoming.aiAssessment;
+    const isRed = triage?.code === "CODE_RED" || incoming.category === "Cardiac" || incoming.facility === "ICU";
+
+    return `
+        <div class="amb-incoming-banner" style="margin-bottom: 16px;">
+            <div>
+                <div class="amb-alert-kicker">
+                    <span class="pulse-dot"></span>
+                    <span>🚨 PRIORITY 1: INCOMING 108 EMERGENCY BROADCAST</span>
+                </div>
+                <h3 style="margin:4px 0 2px; color:var(--navy); font-size:16px;">
+                    ${safe(incoming.patientName)} (${incoming.age ? incoming.age + ' yrs' : 'Adult'}) · ${safe(incoming.category)} Emergency
+                </h3>
+                <p style="margin:0; font-size:13px; color:var(--text);">
+                    📍 <strong>Pickup:</strong> ${safe(incoming.location || 'Salt Lake Sector V, Kolkata')} · 
+                    <strong>Ward:</strong> ${safe(incoming.facility)} Bed Needed ·
+                    <span style="color:#b91c1c; font-weight:700;">${isRed ? 'CODE RED' : 'CODE YELLOW'}</span>
+                </p>
+                ${incoming.notes ? `<p style="margin:4px 0 0 0; font-size:12px; color:var(--muted);">"${safe(incoming.notes)}"</p>` : ''}
+            </div>
+
+            <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+                <button class="btn btn-primary" data-amb-accept="${incoming.id}">
+                    <span>🚨 Accept & Dispatch Now →</span>
+                </button>
+                ${triage ? `<button class="btn btn-light" data-view-triage="${incoming.id}">⚡ Triage Info</button>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function renderActiveMissionHUD() {
+    if (!ambulanceUnit.activeRequestId) return "";
+
+    const req = requestById(ambulanceUnit.activeRequestId);
+    if (!req) return "";
+
+    const stepOrder = ["dispatched", "on_scene", "in_transit", "handover"];
+    const currentStepIdx = Math.max(0, stepOrder.indexOf(ambulanceUnit.dutyStatus));
+    const h = hospitalById(req.hospitalId || ambulanceUnit.targetHospitalId || 1);
+
+    const isStep1Done = currentStepIdx > 0;
+    const isStep2Done = currentStepIdx > 1;
+    const isStep3Done = currentStepIdx > 2;
+    const isStep4Done = currentStepIdx > 3;
+
+    return `
+        <div class="amb-mission-hud" style="margin-bottom: 18px;">
+            <div class="amb-mission-header">
+                <div>
+                    <span style="font-size:10px; font-weight:800; color:#e45e66; letter-spacing:0.8px;">ACTIVE EMERGENCY MISSION</span>
+                    <h3 style="margin:3px 0 0 0; font-size:16px; color:var(--navy);">
+                        ${safe(req.patientName)} · ${safe(req.category)} Emergency · ${safe(req.facility)} Bed
+                    </h3>
+                    <p style="margin:2px 0 0 0; font-size:12px; color:var(--muted);">
+                        Pickup: <strong>${safe(req.location)}</strong> → ER Destination: <strong>${h ? safe(h.name) : "Matching..."}</strong>
+                    </p>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center;">
+                    <span class="role-chip" style="background:#e8f7f5; color:var(--teal); font-weight:700;">
+                        Mission #${String(req.id).slice(-4)}
+                    </span>
+                    <button class="btn-small btn-light" data-amb-abort="true" title="Cancel or abort mission">Abort</button>
+                </div>
+            </div>
+
+            <!-- 4-Stage Mission Breadcrumb -->
+            <div class="amb-stepper">
+                <div class="amb-step-item ${currentStepIdx === 0 ? 'active' : (isStep1Done ? 'done' : '')}">
+                    <span>${isStep1Done ? '✓' : '1.'}</span>
+                    <span>En Route Pickup</span>
+                </div>
+                <div class="amb-step-item ${currentStepIdx === 1 ? 'active' : (isStep2Done ? 'done' : '')}">
+                    <span>${isStep2Done ? '✓' : '2.'}</span>
+                    <span>On Scene / Triage</span>
+                </div>
+                <div class="amb-step-item ${currentStepIdx === 2 ? 'active' : (isStep3Done ? 'done' : '')}">
+                    <span>${isStep3Done ? '✓' : '3.'}</span>
+                    <span>Transit to ER</span>
+                </div>
+                <div class="amb-step-item ${currentStepIdx === 3 ? 'active' : (isStep4Done ? 'done' : '')}">
+                    <span>${isStep4Done ? '✓' : '4.'}</span>
+                    <span>ER Bed Handover</span>
+                </div>
+            </div>
+
+            <!-- Dynamic Mission Stage Content -->
+            <div class="amb-mission-content">
+                ${ambulanceUnit.dutyStatus === "dispatched" ? `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <span style="font-size:11px; font-weight:800; color:var(--blue);">STAGE 1: EN ROUTE TO PATIENT LOCATION</span>
+                            <div style="font-size:14px; font-weight:700; margin-top:3px;">
+                                📍 Approaching: ${safe(req.location)}
+                            </div>
+                            <p style="margin:3px 0 0 0; font-size:12px; color:var(--muted);">
+                                Navigation ETA: approx. <strong>3-4 mins</strong> · Driving with sirens enabled.
+                            </p>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn btn-secondary btn-small" data-amb-call-contact="${safe(req.contact || '9830124567')}">
+                                📞 Call Attendant (${safe(req.contact || '9830124567')})
+                            </button>
+                            <button class="btn btn-light btn-small" data-amb-nav-patient="${req.id}">
+                                ➤ View Pickup Route
+                            </button>
+                            <button class="btn btn-primary" data-amb-advance="on_scene">
+                                ✓ Mark Arrived on Scene ➔
+                            </button>
+                        </div>
+                    </div>
+                ` : ""}
+
+                ${ambulanceUnit.dutyStatus === "on_scene" ? `
+                    <div>
+                        <span style="font-size:11px; font-weight:800; color:var(--teal);">STAGE 2: PATIENT ON BOARD & PARAMEDIC TRIAGE</span>
+                        <div style="font-size:14px; font-weight:700; margin-top:3px;">
+                            Paramedic Assessment: ${safe(req.patientName)}, ${req.age || 48} yrs · ${safe(req.category)}
+                        </div>
+
+                        <div class="amb-vitals-strip">
+                            <div class="amb-vital-pill">
+                                <span>❤️ Heart Rate:</span>
+                                <strong>${req.vitals?.heartRate || 112} bpm</strong>
+                            </div>
+                            <div class="amb-vital-pill">
+                                <span>🩸 Blood Pressure:</span>
+                                <strong>${req.vitals?.systolicBP || '150/95'} mmHg</strong>
+                            </div>
+                            <div class="amb-vital-pill">
+                                <span>🫁 SpO2 Level:</span>
+                                <strong style="color:${(req.vitals?.spo2 || 93) < 94 ? '#ef4444' : '#10b981'};">
+                                    ${req.vitals?.spo2 || 93}% ${((req.vitals?.spo2 || 93) < 94) ? '(Hypoxic)' : '(Stable)'}
+                                </strong>
+                            </div>
+                            <div class="amb-vital-pill">
+                                <span>🧠 Consciousness:</span>
+                                <strong>${req.vitals?.consciousness || 'Alert'}</strong>
+                            </div>
+                        </div>
+
+                        <div style="background:rgba(23, 103, 165, 0.08); border-left:3px solid var(--blue); padding:8px 12px; border-radius:4px; margin:10px 0; font-size:12px;">
+                            <strong>⚡ Groq AI Paramedic Advisory:</strong>
+                            ${req.category === "Cardiac" ? "Apply high-flow O2 at 15 L/min; administer sublingual nitrate if SBP > 100; secure 18G IV line; transport urgently to 24/7 Primary PCI Cath Lab." : "Ensure airway patency, immobilize cervical spine, control active hemorrhage, and initiate warmed crystalloid infusion."}
+                        </div>
+
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-top:12px;">
+                            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                                <button class="btn-small btn-light" data-amb-vitals-adjust="o2_up">💨 Administer 15L O2 (SpO2 98%)</button>
+                                <button class="btn-small btn-secondary" data-amb-pre-arrival="${h ? h.id : 1}">📡 Broadcast Pre-Arrival ER Alert</button>
+                            </div>
+                            <button class="btn btn-primary" data-amb-advance="in_transit">
+                                🚨 Patient Loaded — Depart for Hospital ➔
+                            </button>
+                        </div>
+                    </div>
+                ` : ""}
+
+                ${ambulanceUnit.dutyStatus === "in_transit" ? `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <span style="font-size:11px; font-weight:800; color:#e45e66;">STAGE 3: LIVE EMERGENCY TRANSIT TO HOSPITAL</span>
+                            <div style="font-size:14px; font-weight:700; margin-top:3px;">
+                                🏥 Heading to: ${h ? safe(h.name) : "Hospital"} (${h ? safe(h.area) : ""})
+                            </div>
+                            <p style="margin:3px 0 0 0; font-size:12px; color:var(--muted);">
+                                Distance: <strong>${h ? h.distance : 2.4} km</strong> · Transit ETA: approx. <strong>${Math.max(3, Math.round((h?.distance || 2) * 2.1))} mins</strong> · ER Bed Reserved: <strong>${safe(req.facility)} Bed</strong>
+                            </p>
+                        </div>
+                        <div style="display:flex; gap:8px; flex-wrap:wrap;">
+                            <button class="btn btn-secondary btn-small" data-map="${h ? h.id : 1}">
+                                ➤ Open Leaflet Route
+                            </button>
+                            <button class="btn btn-light btn-small" data-open-map="${h ? h.id : 1}">
+                                🗺️ Google Maps Navigation
+                            </button>
+                            <button class="btn btn-primary" data-amb-advance="handover">
+                                🏥 Arrived at Hospital ER Bay ➔
+                            </button>
+                        </div>
+                    </div>
+                ` : ""}
+
+                ${ambulanceUnit.dutyStatus === "handover" ? `
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                        <div>
+                            <span style="font-size:11px; font-weight:800; color:var(--teal);">STAGE 4: ER BAY ARRIVAL & HOSPITAL HANDOVER</span>
+                            <div style="font-size:14px; font-weight:700; margin-top:3px;">
+                                Handover at: ${h ? safe(h.name) : "Hospital ER"}
+                            </div>
+                            <p style="margin:3px 0 0 0; font-size:12px; color:var(--muted);">
+                                Transferring ${safe(req.patientName)} to Resuscitation Bay. Assigned to <strong>${safe(req.facility)} Bed</strong>. Available beds at facility: ${h ? (req.facility === 'ICU' ? h.icu : h.general) : 'Active'}.
+                            </p>
+                        </div>
+                        <button class="btn btn-success" data-amb-advance="complete">
+                            ✓ Handover to ER Doctor & Complete Admission ➔
+                        </button>
+                    </div>
+                ` : ""}
+            </div>
+        </div>
+    `;
+}
+
 function ambulanceHome() {
-    const pending = data.requests.filter(r=>r.status==="Matching" || r.status==="Pending").length;
+    const pending = (data.requests || []).filter(r => r.status === "Matching" || r.status === "Pending").length;
     const t = totals();
 
     return `
-        ${heading("AMBULANCE OPERATOR","Welcome to your <span>response centre.</span>","Review emergency requests and find the best hospital destinations.")}
-        <div class="hero-panel">
-            <div>
-                <span class="hero-kicker">AMBULANCE COORDINATION</span>
-                <h2>Coordinate the next step.</h2>
-                <p>Review submitted emergency requests, analyze triage, and explore live hospital availability.</p>
-                <button class="btn" data-go="requests">View emergency requests →</button>
-            </div>
-            <div class="hero-mark">＋</div>
+        ${heading("AMBULANCE DISPATCH COCKPIT","Emergency <span>response centre.</span>","Live vehicle telemetry, real-time 108 emergency broadcasts, and turn-by-turn patient hospital transit.")}
+
+        <div class="amb-cockpit">
+            ${renderAmbulanceVehicleCard()}
+            ${renderIncomingDispatchAlert()}
+            ${renderActiveMissionHUD()}
         </div>
+
+        <div class="section-heading">
+            <h2>Network Emergency Telemetry</h2>
+            <span class="muted">Live Fleet Overview</span>
+        </div>
+
         ${statsHTML([
-            stat("＋","Active requests",pending,"red"),
-            stat("⌂","Connected hospitals",data.hospitals.length,"blue"),
-            stat("▦","General beds",t.general,"green"),
-            stat("✚","ICU beds",t.icu,"purple")
+            stat("＋","Pending Calls",pending,"red"),
+            stat("⌂","Connected Hospitals",data.hospitals.length,"blue"),
+            stat("▦","Available General Beds",t.general,"green"),
+            stat("✚","Available ICU Beds",t.icu,"purple")
         ])}
-        <div class="section-heading"><h2>Operator tools</h2></div>
+
+        <div class="section-heading">
+            <h2>Recent Ambulance Missions</h2>
+            <button class="btn-small btn-light" data-amb-sim-call="true">Simulate 108 Emergency</button>
+        </div>
+
+        <div class="panel" style="padding:14px 18px; margin-bottom:20px;">
+            ${ambulanceUnit.recentMissions && ambulanceUnit.recentMissions.length ? `
+                <div style="display:flex; flex-direction:column; gap:10px;">
+                    ${ambulanceUnit.recentMissions.slice(0, 5).map(m => `
+                        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px; padding-bottom:8px; border-bottom:1px solid var(--border);">
+                            <div>
+                                <strong style="font-size:13px; color:var(--navy);">${safe(m.patient)}</strong>
+                                <div style="font-size:11px; color:var(--muted);">${safe(m.outcome)}</div>
+                            </div>
+                            <div style="display:flex; gap:6px; align-items:center;">
+                                <span class="role-chip" style="font-size:10px;">${safe(m.time)}</span>
+                                <span class="status status-accepted" style="font-size:10px;">Completed</span>
+                            </div>
+                        </div>
+                    `).join("")}
+                </div>
+            ` : emptyState("No missions completed in this shift yet.")}
+        </div>
+
+        <div class="section-heading"><h2>Driver Quick Tools</h2></div>
         <div class="quick-grid">
-            ${quickCard("＋","Emergency requests","Review submitted requests","requests")}
-            ${quickCard("⌕","Hospital matching","Compare suitable destinations","matches")}
-            ${quickCard("➤","Navigation","Open hospital map and live GPS directions","navigation")}
+            ${quickCard("＋","Emergency Dispatch Feed","Review and accept incoming 108 calls","requests")}
+            ${quickCard("⌕","Hospital Smart Matching","Compare nearest hospitals with open ICU beds","matches")}
+            ${quickCard("➤","Navigation Map","Live turn-by-turn route with GPS coordinates","navigation")}
         </div>
     `;
 }
 
 function ambulanceRequests() {
+    const list = data.requests || [];
+    let filtered = list;
+    if (ambulanceFilter === "critical") {
+        filtered = list.filter(r => r.aiAssessment?.code === "CODE_RED" || r.category === "Cardiac" || r.facility === "ICU");
+    } else if (ambulanceFilter === "matching") {
+        filtered = list.filter(r => r.status === "Matching" || r.status === "Pending");
+    } else if (ambulanceFilter === "active") {
+        filtered = list.filter(r => r.status === "Dispatched" || r.status === "In Transit" || r.status === "On Scene");
+    } else if (ambulanceFilter === "completed") {
+        filtered = list.filter(r => r.status === "Admitted" || r.status === "Accepted");
+    }
+
     return `
-        ${heading("RESPONSE COORDINATION","Emergency <span>requests.</span>","Review patient requests submitted to the network.")}
+        ${heading("DISPATCH CONSOLE","Emergency <span>dispatch feed.</span>","Receive real-time 108 emergency calls, assign response units, and coordinate patient transits.")}
+
+        <div class="amb-filter-bar">
+            <button class="amb-filter-pill ${ambulanceFilter === 'all' ? 'active' : ''}" data-amb-filter="all">All Calls (${list.length})</button>
+            <button class="amb-filter-pill ${ambulanceFilter === 'critical' ? 'active' : ''}" data-amb-filter="critical">🚨 Code Red Critical</button>
+            <button class="amb-filter-pill ${ambulanceFilter === 'matching' ? 'active' : ''}" data-amb-filter="matching">⏳ Awaiting Ambulance</button>
+            <button class="amb-filter-pill ${ambulanceFilter === 'active' ? 'active' : ''}" data-amb-filter="active">🚑 Dispatched & Active</button>
+            <button class="amb-filter-pill ${ambulanceFilter === 'completed' ? 'active' : ''}" data-amb-filter="completed">✓ Completed Admitted</button>
+        </div>
+
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:10px;">
+            <div style="font-size:12px; color:var(--muted);">
+                Showing <strong>${filtered.length}</strong> emergency calls in network
+            </div>
+            <button class="btn btn-secondary btn-small" data-amb-sim-call="true">
+                <span>🚨 Trigger Test 108 Emergency Call</span>
+            </button>
+        </div>
+
         <div class="card-grid">
-            ${data.requests.length ? data.requests.slice().reverse().map(r=>requestCard(r,false)).join("") : emptyState("No emergency requests have been submitted yet.")}
+            ${filtered.length ? filtered.slice().reverse().map(r => requestCard(r, true)).join("") : emptyState("No emergency requests in this category.")}
         </div>
     `;
 }
@@ -2115,6 +2616,148 @@ document.addEventListener("click",event => {
     if (assign) assignAmbulanceHospital(Number(assign.dataset.assign));
     if (accept) updateRequestStatus(Number(accept.dataset.accept),"Accepted");
     if (reject) updateRequestStatus(Number(reject.dataset.reject),"Rejected");
+
+    // Ambulance Simulator Controls
+    const ambSiren = event.target.closest("[data-amb-siren]");
+    if (ambSiren) {
+        ambulanceUnit.sirenActive = !ambulanceUnit.sirenActive;
+        saveAmbulanceState();
+        if (ambulanceUnit.sirenActive) {
+            playEmergencyChime(true);
+            toast("🚨 Emergency Siren & Strobes Activated");
+        } else {
+            toast("Emergency Siren silenced.");
+        }
+        renderPage();
+        return;
+    }
+
+    const ambSimCall = event.target.closest("[data-amb-sim-call]");
+    if (ambSimCall) {
+        simulateIncomingEmergency();
+        return;
+    }
+
+    const ambAccept = event.target.closest("[data-amb-accept]");
+    if (ambAccept) {
+        const reqId = Number(ambAccept.dataset.ambAccept);
+        const req = requestById(reqId);
+        if (req) {
+            req.status = "Dispatched";
+            req.ambulanceCallSign = ambulanceUnit.callSign;
+            saveData();
+            supabaseUpdateRequest(req.id, "Dispatched", req.hospitalId);
+        }
+        ambulanceUnit.activeRequestId = reqId;
+        ambulanceUnit.dutyStatus = "dispatched";
+        ambulanceUnit.sirenActive = true;
+        saveAmbulanceState();
+        playEmergencyChime(true);
+        toast(`🚨 Mission Accepted: En route to ${req ? req.patientName : 'patient'}!`);
+        openPage("overview");
+        return;
+    }
+
+    const ambAdvance = event.target.closest("[data-amb-advance]");
+    if (ambAdvance) {
+        const nextStage = ambAdvance.dataset.ambAdvance;
+        if (nextStage === "on_scene") {
+            ambulanceUnit.dutyStatus = "on_scene";
+            saveAmbulanceState();
+            toast("✓ Arrived on scene. Paramedic vitals & triage active.");
+        } else if (nextStage === "in_transit") {
+            ambulanceUnit.dutyStatus = "in_transit";
+            ambulanceUnit.sirenActive = true;
+            saveAmbulanceState();
+            playEmergencyChime(true);
+            toast("🚨 Patient on board. En route to Emergency Room!");
+        } else if (nextStage === "handover") {
+            ambulanceUnit.dutyStatus = "handover";
+            saveAmbulanceState();
+            toast("🏥 Arrived at Hospital ER Bay. Ready for clinical handover.");
+        } else if (nextStage === "complete") {
+            const req = requestById(ambulanceUnit.activeRequestId);
+            const h = hospitalById(req ? (req.hospitalId || ambulanceUnit.targetHospitalId || 1) : 1);
+            if (req && h) {
+                const bedKey = req.facility === "ICU" ? "icu" : "general";
+                h[bedKey] = Math.max(0, (Number(h[bedKey]) || 0) - 1);
+                req.status = "Admitted";
+                req.token = "PRAN-ER-" + String(req.id).slice(-4);
+                saveData();
+                supabaseUpdateBeds(h.id, { [bedKey]: h[bedKey] });
+                supabaseUpdateRequest(req.id, "Admitted", h.id);
+
+                ambulanceUnit.recentMissions.unshift({
+                    id: req.id,
+                    patient: req.patientName,
+                    time: "Just now",
+                    outcome: `Admitted to ${h.name} (${req.facility} Bed)`,
+                    code: req.aiAssessment?.code || "CODE_RED"
+                });
+            }
+            ambulanceUnit.activeRequestId = null;
+            ambulanceUnit.dutyStatus = "available";
+            ambulanceUnit.sirenActive = false;
+            saveAmbulanceState();
+            toast("✓ Patient successfully admitted! Ambulance unit back Available on Duty.");
+        }
+        renderPage();
+        return;
+    }
+
+    const ambAbort = event.target.closest("[data-amb-abort]");
+    if (ambAbort) {
+        ambulanceUnit.activeRequestId = null;
+        ambulanceUnit.dutyStatus = "available";
+        ambulanceUnit.sirenActive = false;
+        saveAmbulanceState();
+        toast("Mission cancelled. Ambulance is Available on Duty.");
+        renderPage();
+        return;
+    }
+
+    const ambFilter = event.target.closest("[data-amb-filter]");
+    if (ambFilter) {
+        ambulanceFilter = ambFilter.dataset.ambFilter;
+        renderPage();
+        return;
+    }
+
+    const ambVitalsAdjust = event.target.closest("[data-amb-vitals-adjust]");
+    if (ambVitalsAdjust) {
+        const req = requestById(ambulanceUnit.activeRequestId);
+        if (req) {
+            if (!req.vitals) req.vitals = {};
+            req.vitals.spo2 = 98;
+            req.vitals.heartRate = 84;
+            saveData();
+            toast("💨 High-Flow O2 Administered: SpO2 elevated to 98% (Stable).");
+            renderPage();
+        }
+        return;
+    }
+
+    const ambPreArrival = event.target.closest("[data-amb-pre-arrival]");
+    if (ambPreArrival) {
+        const hid = Number(ambPreArrival.dataset.ambPreArrival) || 1;
+        const h = hospitalById(hid);
+        toast(`📡 Pre-Arrival Broadcast Sent: ${h ? h.name : "ER"} Trauma Bay & Cath Lab Alerted!`);
+        return;
+    }
+
+    const ambCallContact = event.target.closest("[data-amb-call-contact]");
+    if (ambCallContact) {
+        const num = ambCallContact.dataset.ambCallContact;
+        toast(`📞 Dialing attendant at ${num}... Paramedic voice link established.`);
+        return;
+    }
+
+    const ambNavPatient = event.target.closest("[data-amb-nav-patient]");
+    if (ambNavPatient) {
+        toast("📍 GPS Navigation to Patient Pickup activated.");
+        openPage("navigation");
+        return;
+    }
 
     // Quick Bed Increment / Decrement
     const quickBed = event.target.closest("[data-quick-bed]");
@@ -2393,6 +3036,15 @@ function updateRequestStatus(id,status) {
     toast("Request " + status.toLowerCase() + ".");
     renderPage();
 }
+
+document.addEventListener("change", event => {
+    if (event.target.id === "ambDutySelect") {
+        ambulanceUnit.dutyStatus = event.target.value;
+        saveAmbulanceState();
+        toast("Ambulance Duty Updated: " + event.target.value.toUpperCase());
+        renderPage();
+    }
+});
 
 /* ============================================
    INITIALISE

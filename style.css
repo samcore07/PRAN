@@ -1358,3 +1358,328 @@ td strong { color: var(--navy); }
     color: #58a6ff;
 }
 
+
+/* ============================================
+   AMBULANCE DRIVER COCKPIT & DISPATCH HUD
+============================================ */
+
+.amb-cockpit {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.amb-vehicle-card {
+    background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 18px 20px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+    position: relative;
+    overflow: hidden;
+}
+
+.amb-vehicle-card::after {
+    content: "🚑";
+    position: absolute;
+    right: 20px;
+    bottom: -10px;
+    font-size: 80px;
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+.amb-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+
+.amb-unit-title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.amb-callsign-pill {
+    background: #e45e66;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: 6px;
+    letter-spacing: 0.8px;
+}
+
+.amb-unit-title h2 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 17px;
+    letter-spacing: -0.2px;
+}
+
+.amb-crew-info {
+    font-size: 11px;
+    color: #cbd5e1;
+    margin-top: 2px;
+}
+
+.amb-header-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.amb-siren-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.amb-siren-toggle:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.amb-siren-toggle.active {
+    background: #e45e66;
+    border-color: #ef4444;
+    animation: sirenPulse 0.9s infinite alternate;
+}
+
+@keyframes sirenPulse {
+    0% { box-shadow: 0 0 12px rgba(228, 94, 102, 0.8); background: #e45e66; }
+    100% { box-shadow: 0 0 16px rgba(59, 130, 246, 0.8); background: #2563eb; }
+}
+
+.amb-duty-select {
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    padding: 6px 12px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.amb-duty-select option {
+    background: #1e293b;
+    color: #ffffff;
+}
+
+.amb-telemetry-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.amb-telemetry-tile {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 8px;
+    padding: 8px 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.amb-telemetry-icon {
+    font-size: 18px;
+}
+
+.amb-telemetry-text small {
+    display: block;
+    font-size: 9px;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.amb-telemetry-text strong {
+    font-size: 13px;
+    color: #ffffff;
+}
+
+/* Incoming Emergency Dispatch Banner */
+.amb-incoming-banner {
+    background: #fff1f2;
+    border: 2px solid #e45e66;
+    border-radius: 10px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    box-shadow: 0 4px 16px rgba(228, 94, 102, 0.15);
+    animation: alertFlash 1.6s infinite ease-in-out;
+}
+
+@keyframes alertFlash {
+    0%, 100% { border-color: #e45e66; box-shadow: 0 4px 16px rgba(228, 94, 102, 0.2); }
+    50% { border-color: #b91c1c; box-shadow: 0 6px 22px rgba(228, 94, 102, 0.4); }
+}
+
+[data-theme="dark"] .amb-incoming-banner {
+    background: #2b1215;
+    border-color: #f87171;
+}
+
+.amb-alert-kicker {
+    font-size: 10px;
+    font-weight: 800;
+    color: #b91c1c;
+    letter-spacing: 0.8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.amb-alert-kicker .pulse-dot {
+    width: 8px;
+    height: 8px;
+    background: #ef4444;
+    border-radius: 50%;
+    animation: pingDot 1s infinite;
+}
+
+@keyframes pingDot {
+    0% { transform: scale(0.9); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+    100% { transform: scale(0.9); opacity: 1; }
+}
+
+/* Mission Control HUD */
+.amb-mission-hud {
+    background: var(--white);
+    border: 2px solid var(--border);
+    border-radius: 12px;
+    padding: 18px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+}
+
+.amb-mission-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.amb-stepper {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+    margin-bottom: 18px;
+}
+
+@media (max-width: 640px) {
+    .amb-stepper {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.amb-step-item {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: var(--muted);
+    transition: all 0.2s ease;
+}
+
+.amb-step-item.active {
+    background: rgba(23, 103, 165, 0.1);
+    border-color: var(--blue);
+    color: var(--navy);
+    font-weight: 700;
+}
+
+.amb-step-item.done {
+    background: rgba(36, 150, 110, 0.1);
+    border-color: #24966e;
+    color: #24966e;
+}
+
+.amb-mission-content {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.amb-vitals-strip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.amb-vital-pill {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.amb-quick-actions-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 14px;
+}
+
+.amb-filter-bar {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    margin-bottom: 16px;
+}
+
+.amb-filter-pill {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 700;
+    padding: 5px 12px;
+    border-radius: 20px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.18s ease;
+}
+
+.amb-filter-pill.active,
+.amb-filter-pill:hover {
+    background: var(--blue);
+    color: #ffffff;
+    border-color: var(--blue);
+}
