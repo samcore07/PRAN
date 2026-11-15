@@ -26,12 +26,27 @@ function isSupabaseAvailable() {
     );
 }
 
-function initSupabase() {
+async function initSupabase() {
+    if (!isSupabaseAvailable()) {
+        try {
+            const res = await fetch("http://localhost:5001/api/supabase/config");
+            if (res.ok) {
+                const config = await res.json();
+                if (config.url && config.anonKey) {
+                    SUPABASE_CONFIG.url = config.url;
+                    SUPABASE_CONFIG.anonKey = config.anonKey;
+                }
+            }
+        } catch (e) {
+            // Fallback to local mode quietly
+        }
+    }
+
     if (isSupabaseAvailable()) {
         try {
             supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
             console.log("✓ Connected to Supabase at:", SUPABASE_CONFIG.url);
-            supabaseSync();
+            await supabaseSync();
         } catch (e) {
             console.warn("Supabase initialization error:", e);
         }

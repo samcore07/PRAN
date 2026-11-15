@@ -26,19 +26,34 @@ function isSupabaseAvailable() {
     );
 }
 
-function initSupabase() {
+async function initSupabase() {
+    if (!isSupabaseAvailable()) {
+        try {
+            const res = await fetch("http://localhost:5001/api/supabase/config");
+            if (res.ok) {
+                const config = await res.json();
+                if (config.url && config.anonKey) {
+                    SUPABASE_CONFIG.url = config.url;
+                    SUPABASE_CONFIG.anonKey = config.anonKey;
+                }
+            }
+        } catch (e) {
+            // Backend might not be running locally, fallback quietly
+        }
+    }
+
     if (isSupabaseAvailable()) {
         try {
             supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
             console.log("✓ Supabase client initialized on frontend:", SUPABASE_CONFIG.url);
             setupRealtimeSubscriptions();
-            syncFromSupabase();
+            await syncFromSupabase();
         } catch (e) {
             console.warn("Supabase initialization error:", e);
             supabaseClient = null;
         }
     } else {
-        console.log("ℹ Supabase running in local/demo mode. To connect live Supabase, configure frontend/js/supabase.js or window.PRAN_ENV.");
+        console.log("ℹ Supabase running in local/demo mode. To connect live Supabase, start backend or configure window.PRAN_ENV.");
     }
 }
 

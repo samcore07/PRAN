@@ -97,12 +97,13 @@ const server = http.createServer((req, res) => {
             return;
         }
 
-        if (pathname === "/api/supabase/status") {
+        if (pathname === "/api/supabase/status" || pathname === "/api/supabase/config") {
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
                 configured: isConfigured,
                 connected: Boolean(supabase),
-                url: process.env.SUPABASE_URL || "not_configured"
+                url: process.env.SUPABASE_URL || "",
+                anonKey: process.env.SUPABASE_ANON_KEY || ""
             }));
             return;
         }
