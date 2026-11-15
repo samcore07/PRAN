@@ -3,7 +3,10 @@
  * Integrates with PRAN Backend Groq AI Endpoints (/api/ai/*)
  */
 
-const AI_API_BASE = "http://localhost:5001/api/ai";
+const API_HOST = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+    ? "http://localhost:5001"
+    : "";
+const AI_API_BASE = `${API_HOST}/api/ai`;
 
 let aiStatusCache = null;
 let copilotMessages = [

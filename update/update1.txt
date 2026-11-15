@@ -372,4 +372,27 @@ Furnished the platform into an ultra-realistic, AI-augmented emergency health-te
 5. Patient Emergency Lifecycle & Admission Slip:
    - Visual 4-stage emergency care tracker (Intake -> AI Triage -> Routing -> Admission).
    - Formatted printable Emergency Admission Pass modal with token and ER desk instructions.
+
+12. VERCEL SERVERLESS & DEPLOYMENT ARCHITECTURE
+--------------------------------------------------------------------------------
+Configured the fullstack application for seamless 1-click deployment on Vercel:
+1. Serverless API Function (api/index.js):
+   - Created Vercel serverless function entrypoint routing all /api/* requests.
+   - Handles CORS, Supabase database queries, AI Groq endpoints, and hospital bed updates.
+   - Fully tested in simulated serverless runtime with 200 OK health status.
+
+2. Vercel Configuration (vercel.json):
+   - Configured cleanUrls and automated rewrites mapping /api/(.*) to /api/index.js.
+   - Static assets (HTML, CSS, JS, Leaflet canvas) served directly via Vercel Edge CDN.
+
+3. Dynamic API Host Resolution:
+   - Frontend dynamically switches between relative /api/* (on Vercel production)
+     and http://localhost:5001 (on local development).
+
+4. Production Environment Variables (to set in Vercel Project Settings):
+   - SUPABASE_URL: Live project URL
+   - SUPABASE_ANON_KEY: Public client key
+   - SUPABASE_SERVICE_ROLE_KEY: Secure backend key
+   - GROQ_API_KEY: Groq AI inference key
+   - GROQ_MODEL: llama-3.3-70b-versatile
 ================================================================================

@@ -29,7 +29,10 @@ function isSupabaseAvailable() {
 async function initSupabase() {
     if (!isSupabaseAvailable()) {
         try {
-            const res = await fetch("http://localhost:5001/api/supabase/config");
+            const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+                ? "http://localhost:5001"
+                : "";
+            const res = await fetch(`${apiHost}/api/supabase/config`);
             if (res.ok) {
                 const config = await res.json();
                 if (config.url && config.anonKey) {

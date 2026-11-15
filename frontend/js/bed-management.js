@@ -122,7 +122,10 @@ document.addEventListener("click", async event => {
 
         // Update Backend & Supabase
         try {
-            await fetch(`http://localhost:5001/api/hospitals/${h.id}/capacity`, {
+            const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+                ? "http://localhost:5001"
+                : "";
+            await fetch(`${apiHost}/api/hospitals/${h.id}/capacity`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ [type]: newVal })
@@ -163,7 +166,10 @@ document.addEventListener("submit", async event => {
         supabaseUpdateBedCapacity(h.id, { general, icu, staff });
     }
     try {
-        await fetch(`http://localhost:5001/api/hospitals/${h.id}/capacity`, {
+        const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+            ? "http://localhost:5001"
+            : "";
+        await fetch(`${apiHost}/api/hospitals/${h.id}/capacity`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ general, icu, staff })
