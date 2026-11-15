@@ -97,13 +97,18 @@ async function sendCopilotQuery(promptText, extraContext = {}) {
                 content: result.message || "Protocol received. Prioritize patient airway and stability."
             });
         } else {
-            throw new Error(`HTTP ${res.status}`);
+            const errData = await res.json().catch(() => ({}));
+            const errMsg = errData.error || errData.message || `Server HTTP ${res.status}`;
+            throw new Error(errMsg);
         }
     } catch (e) {
         // Fallback emergency answer
         let fallback = "⚠️ Emergency Guidance: Keep the patient calm, seated or lying down in recovery position, and ensure rapid transport to the nearest emergency facility.";
         if (promptText.toLowerCase().includes("cpr")) {
             fallback = "🚨 IMMEDIATE CPR PROTOCOL:\n1. Check responsiveness and carotid pulse.\n2. Place hands on center of chest.\n3. Compress hard and fast: 100-120 beats/min, at least 2 inches deep.\n4. Allow full chest recoil.\n5. Attach AED as soon as available.";
+        }
+        if (e && e.message) {
+            fallback += `\n\n*(Notice: ${e.message})*`;
         }
         copilotMessages.push({ role: "assistant", content: fallback });
     } finally {

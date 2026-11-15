@@ -15,14 +15,29 @@ const https = require('https');
 const http = require('http');
 
 function getGroqKey(customKey) {
+  let key = '';
   if (customKey && typeof customKey === 'string' && customKey.trim().length > 5) {
-    return customKey.trim();
+    key = customKey.trim();
+  } else {
+    key = (process.env.GROQ_API_KEY || '').trim();
   }
-  return (process.env.GROQ_API_KEY || '').trim();
+  // Strip accidental enclosing quotes from environment variables
+  return key.replace(/^["']|["']$/g, '').trim();
 }
 
 function getGroqModel() {
-  return (process.env.GROQ_MODEL || 'llama-3.3-70b-versatile').trim();
+  let raw = (process.env.GROQ_MODEL || 'llama-3.3-70b-versatile').trim();
+  raw = raw.replace(/^["']|["']$/g, '').trim();
+
+  // Auto-upgrade any deprecated or legacy model names to active Groq production models
+  const aliasMap = {
+    'llama-3.1-70b-versatile': 'llama-3.3-70b-versatile',
+    'llama3-70b-8192': 'llama-3.3-70b-versatile',
+    'llama3-8b-8192': 'llama-3.1-8b-instant',
+    'llama-3-70b': 'llama-3.3-70b-versatile',
+    'llama-3-8b': 'llama-3.1-8b-instant'
+  };
+  return aliasMap[raw] || raw || 'llama-3.3-70b-versatile';
 }
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
@@ -296,7 +311,7 @@ CURRENT ACTIVE CONTEXT:
     } else if (lastMsg.includes('bed') || lastMsg.includes('icu') || lastMsg.includes('hospital')) {
       reply += `🏥 HOSPITAL NETWORK STATUS:\nWe currently have connected hospitals in Kolkata with active ICU and General emergency beds. Use the 'Bed Availability' or 'Hospital Matching' tab to route directly with live GPS.`;
     } else {
-      reply += `I am ready to assist you with emergency triage, first aid steps, or hospital routing. To unlock live Groq AI reasoning, provide your Groq API key in Vercel environment variables or enter it via the 🔑 Key button in the Copilot header.`;
+      reply += `I am ready to assist you with emergency triage, first aid steps, or hospital routing. To enable live Groq AI reasoning, ensure GROQ_API_KEY is configured in your Vercel Environment Variables.`;
     }
     return {
       message: reply,
@@ -306,9 +321,17 @@ CURRENT ACTIVE CONTEXT:
   }
 
   try {
+    const cleanHistory = (Array.isArray(messages) ? messages : [])
+      .filter(m => m && typeof m.content === 'string' && m.content.trim())
+      .map(m => ({
+        role: m.role === 'assistant' ? 'assistant' : 'user',
+        content: String(m.content).trim()
+      }))
+      .slice(-8);
+
     const conversation = [
       { role: 'system', content: systemPrompt },
-      ...messages.slice(-6)
+      ...cleanHistory
     ];
 
     const reply = await callGroqApi(conversation, { temperature: 0.3, max_tokens: 600, apiKey: customKey });

@@ -306,12 +306,17 @@ async function sendCopilotQuery(promptText, extraContext = {}) {
             const result = await res.json();
             copilotMessages.push({ role: "assistant", content: result.message || "Protocol received." });
         } else {
-            throw new Error(`HTTP ${res.status}`);
+            const errData = await res.json().catch(() => ({}));
+            const errMsg = errData.error || errData.message || `Server HTTP ${res.status}`;
+            throw new Error(errMsg);
         }
     } catch(e) {
         let fallback = "⚠️ Emergency Guidance: Keep patient calm, in recovery position, and ensure rapid transport to nearest facility.";
         if (promptText.toLowerCase().includes("cpr")) {
             fallback = "🚨 IMMEDIATE CPR PROTOCOL:\n1. Check carotid pulse.\n2. Push hard and fast in center of chest (100-120 bpm, 2 inches deep).\n3. Allow full chest recoil.\n4. Attach AED immediately.";
+        }
+        if (e && e.message) {
+            fallback += `\n\n*(Notice: ${e.message})*`;
         }
         copilotMessages.push({ role: "assistant", content: fallback });
     } finally {

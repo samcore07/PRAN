@@ -123,7 +123,29 @@ module.exports = async (req, res) => {
   }
 
   const parsedUrl = new URL(req.url, `https://${req.headers.host || 'pran.vercel.app'}`);
-  const pathname = parsedUrl.pathname;
+  
+  // Extract real path from query rewrite (__pran_api_path), Vercel routing headers, or req.url
+  let pathname = parsedUrl.searchParams.get('__pran_api_path')
+    || req.headers['x-matched-path']
+    || req.headers['x-invoke-path']
+    || req.headers['x-forwarded-uri']
+    || parsedUrl.pathname;
+
+  pathname = pathname.split('?')[0];
+
+  // If path resolved to index itself, check if x-matched-path or query parameter contains actual subroute
+  if (pathname === '/api/index.js' || pathname === '/api/index' || pathname === '/index.js' || pathname === '/api') {
+    if (parsedUrl.searchParams.get('__pran_api_path')) {
+      pathname = parsedUrl.searchParams.get('__pran_api_path').split('?')[0];
+    } else if (req.headers['x-matched-path'] && req.headers['x-matched-path'] !== pathname) {
+      pathname = req.headers['x-matched-path'].split('?')[0];
+    }
+  }
+
+  // Normalize trailing slash
+  if (pathname.length > 1 && pathname.endsWith('/')) {
+    pathname = pathname.slice(0, -1);
+  }
 
   // Serve static frontend assets for non-API routes (supports Vercel Node runtime)
   if (!pathname.startsWith('/api')) {
