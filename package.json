@@ -4,6 +4,7 @@
   "description": "PRAN - Emergency Hospital Coordination System",
   "main": "api/index.js",
   "scripts": {
+    "build": "echo 'Build complete'",
     "start": "node backend/server.js",
     "backend": "cd backend && node server.js"
   },
