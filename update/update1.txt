@@ -2,7 +2,7 @@
 PRAN - EMERGENCY HOSPITAL COORDINATION SYSTEM
 DOCUMENTATION UPDATE 1 (UPDATE1.TXT)
 Date: November 15, 2026
-Repository: https://github.com/samcore07/PRAN
+Repository: https://github.com/sammyheheh0101/PRAN
 ================================================================================
 
 1. EXECUTIVE OVERVIEW
