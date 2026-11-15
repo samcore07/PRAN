@@ -3,19 +3,38 @@
 ============================================ */
 
 function matchScore(h, r) {
-    const bed = r.facility === "ICU" ? h.icu : h.general;
+    const facilityLower = String(r.facility || "general").toLowerCase();
+    let bed = h.general;
+    if (facilityLower === "icu") bed = h.icu;
+    else if (facilityLower === "oxygen") bed = h.oxygen || Math.floor((h.general || 0) * 0.4);
+
     let score = 0;
 
-    if (h.categories.includes(r.category)) score += 25;
-    if (h.facilities.includes("Emergency")) score += 20;
-    if (bed > 0) score += 30;
-    if (h.staff > 0) score += 15;
+    // Category & facility capability match
+    const categories = Array.isArray(h.categories) ? h.categories : [];
+    const facilities = Array.isArray(h.facilities) ? h.facilities : [];
 
-    score += Math.max(0, 10 - h.distance / 2);
+    if (categories.includes(r.category)) score += 30;
+    if (facilities.includes("Emergency")) score += 20;
+    if (bed > 0) score += 25;
+    if (h.staff > 0) score += 10;
+
+    // Distance & Travel Time factor (Closer is ranked higher)
+    const dist = Number(h.distance || 5);
+    if (dist <= 5) score += 15;
+    else if (dist <= 10) score += 10;
+    else score += 5;
+
+    // Load score factor (less loaded is better)
+    const icuAvail = Number(h.icu || 0);
+    const genAvail = Number(h.general || 0);
+    const isUnderHeavyLoad = icuAvail === 0 && genAvail < 3;
+    if (!isUnderHeavyLoad) score += 10;
 
     return {
-        score: Math.round(score),
-        eligible: bed > 0 && h.categories.includes(r.category) && h.facilities.includes("Emergency") && h.staff > 0
+        score: Math.min(100, Math.round(score)),
+        eligible: bed > 0 && categories.includes(r.category),
+        travelTime: Math.max(3, Math.ceil((dist / 30) * 60))
     };
 }
 

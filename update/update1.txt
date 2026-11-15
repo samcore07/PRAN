@@ -248,4 +248,36 @@ Endpoints:
    All JavaScript code has been syntax-checked and tested. 
    Backend health check, hospital listing, request creation, status updating, 
    and reservation tracking have all been verified.
+
+7. ALIGNMENT WITH HOSPITAL BED ROUTING SYSTEM & REMOVAL OF STATIC DATA
+--------------------------------------------------------------------------------
+Architecture Aligned with: https://github.com/SrijanMallick/hospital-bed-routing-system
+
+Enhancements Added:
+1. Clinical Triage Logic (backend/services/triageLogic.js):
+   - Non-clinical symptom severity assessment evaluating consciousness, bleeding,
+     breathing difficulty, chest pain, fever, severe trauma, and age vulnerability.
+   - Classification into CRITICAL (ICU required), URGENT (Oxygen/ICU bed required),
+     and STABLE (General bed required).
+   - Conflicting signal detection & clinical confidence scoring (HIGH, MEDIUM, LOW).
+
+2. Smart Routing & Recommendation Engine (backend/services/routingLogic.js):
+   - Haversine geographic distance calculation between patient coordinates & hospitals.
+   - Estimated transit travel time in minutes based on real-world traffic speeds.
+   - Dynamic hospital load scoring based on ICU, oxygen, and general occupancy.
+   - Multi-criteria hospital ranking (proximity score + bed availability + load score
+     + critical patient rapid-transit bonus).
+   - Automatic fallback hospital recommendations & alternative ward suggestions.
+
+3. New Aligned API Endpoints:
+   - POST /api/triage: Evaluates patient triage responses and calculates best-fit hospitals.
+   - GET  /api/admin/dashboard: Aggregates network occupancy rates, hospital loads,
+     and critical capacity saturation alerts.
+   - PUT  /api/admin/hospitals/:id/beds: Live bed inventory modification.
+
+4. Complete Removal of Static Mock Data:
+   - Removed hardcoded hospitalsDefault arrays from frontend/js/main.js & script.js.
+   - Empty initial cache state: all hospitals and bed availability are queried
+     live from Supabase PostgreSQL tables.
+   - Automatic fallback discovery for seamless client-server database synchronization.
 ================================================================================

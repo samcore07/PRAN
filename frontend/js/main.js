@@ -4,15 +4,7 @@
 
 const STORAGE = "PRAN_ROLE_DEMO_V1";
 
-const hospitalsDefault = [
-    { id: 1, name: "Aster Care Medical Centre", area: "Salt Lake Sector V, Kolkata", distance: 3.2, general: 12, icu: 4, staff: 8, categories: ["Accident", "Cardiac", "Neurological", "General"], facilities: ["Emergency", "ICU", "Trauma Care", "Cardiac Care"] },
-    { id: 2, name: "Northview Multispeciality Hospital", area: "New Town, Kolkata", distance: 5.6, general: 8, icu: 2, staff: 6, categories: ["Accident", "Cardiac", "General"], facilities: ["Emergency", "ICU", "Trauma Care"] },
-    { id: 3, name: "Lakeside Emergency Centre", area: "Bidhannagar, Kolkata", distance: 6.8, general: 5, icu: 3, staff: 5, categories: ["Cardiac", "Neurological", "General"], facilities: ["Emergency", "ICU", "Cardiac Care", "Neuro Care"] },
-    { id: 4, name: "Greenline General Hospital", area: "Kestopur, Kolkata", distance: 8.1, general: 18, icu: 0, staff: 4, categories: ["Accident", "General"], facilities: ["Emergency", "Trauma Care"] },
-    { id: 5, name: "City Heart & Neuro Institute", area: "EM Bypass, Kolkata", distance: 10.4, general: 6, icu: 5, staff: 9, categories: ["Cardiac", "Neurological", "General"], facilities: ["Emergency", "ICU", "Cardiac Care", "Neuro Care"] },
-    { id: 6, name: "Riverbend Community Hospital", area: "Dum Dum, Kolkata", distance: 11.7, general: 10, icu: 1, staff: 3, categories: ["Accident", "General"], facilities: ["Emergency", "Trauma Care"] }
-];
-
+// No static hospital data - live database integration
 let data = loadData();
 let currentUser = null;
 let currentRole = null;
@@ -30,17 +22,37 @@ function loadData() {
             }
         }
     } catch (error) {
-        console.warn("PRAN data could not be loaded.", error);
+        console.warn("PRAN local cache could not be read.", error);
     }
 
     return {
-        hospitals: hospitalsDefault.map(h => ({
-            ...h,
-            categories: [...h.categories],
-            facilities: [...h.facilities]
-        })),
+        hospitals: [],
         requests: []
     };
+}
+
+async function syncFromDatabase() {
+    // 1. Try Supabase direct sync
+    if (typeof supabaseFetchHospitals === "function") {
+        const supHosp = await supabaseFetchHospitals();
+        if (supHosp && supHosp.length > 0) return;
+    }
+
+    // 2. Try Backend API sync
+    try {
+        const res = await fetch("http://localhost:5001/api/hospitals");
+        if (res.ok) {
+            const result = await res.json();
+            const list = Array.isArray(result) ? result : result.data;
+            if (Array.isArray(list) && list.length > 0) {
+                data.hospitals = list;
+                saveData();
+                if (typeof renderPage === "function") renderPage();
+            }
+        }
+    } catch (err) {
+        // Backend offline or unreachable
+    }
 }
 
 function saveData() {
@@ -152,7 +164,8 @@ function initialise() {
     if (typeof showScreen === "function") {
         showScreen("loginScreen");
     }
-    console.log("PRAN role-based frontend initialized.");
+    syncFromDatabase();
+    console.log("PRAN role-based frontend initialized with live database.");
 }
 
 if (document.readyState === "loading") {

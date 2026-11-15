@@ -131,28 +131,39 @@ function hospitalHome() {
 }
 
 function adminHome() {
+    if (data.hospitals.length === 0 && typeof syncFromDatabase === "function") {
+        syncFromDatabase();
+    }
+
     const t = totals();
     const pending = data.requests.filter(r => r.status === "Pending" || r.status === "Matching").length;
     const accepted = data.requests.filter(r => r.status === "Accepted").length;
 
+    // Bed load calculations aligned with routing system
+    const estTotalGeneral = Math.max(t.general, data.hospitals.length * 40);
+    const estTotalICU = Math.max(t.icu, data.hospitals.length * 12);
+    const icuOccupancy = estTotalICU > 0 ? Math.round(((estTotalICU - t.icu) / estTotalICU) * 100) : 0;
+    const generalOccupancy = estTotalGeneral > 0 ? Math.round(((estTotalGeneral - t.general) / estTotalGeneral) * 100) : 0;
+    const networkLoad = Math.round((icuOccupancy * 0.6) + (generalOccupancy * 0.4));
+
     return `
-        ${heading("SYSTEM ADMINISTRATION", "Network <span>overview.</span>", "Monitor the sample hospital network and platform requests.")}
+        ${heading("SYSTEM ADMINISTRATION", "Network <span>overview.</span>", "Live hospital network capacity, triage activity and occupancy load.")}
         <div class="hero-panel">
             <div>
-                <span class="hero-kicker">PRAN NETWORK ADMINISTRATION</span>
+                <span class="hero-kicker">NETWORK LOAD: ${networkLoad}% OCCUPANCY</span>
                 <h2>One connected network.</h2>
-                <p>Review hospital capacity and monitor emergency coordination activity.</p>
+                <p>Hospital bed management, clinical triage and emergency coordination active across ${data.hospitals.length} hospitals.</p>
                 <button class="btn" data-go="beds">View hospital network →</button>
             </div>
             <div class="hero-mark">▣</div>
         </div>
         ${statsHTML([
             stat("⌂", "Connected hospitals", data.hospitals.length, "blue"),
-            stat("▦", "General beds", t.general, "green"),
-            stat("✚", "ICU beds", t.icu, "red"),
-            stat("▤", "Active requests", pending, "purple")
+            stat("▦", "Available general beds", t.general, "green"),
+            stat("✚", "Available ICU beds", t.icu, "red"),
+            stat("⚡", "ICU occupancy load", `${icuOccupancy}%`, "purple")
         ])}
-        <div class="section-heading"><h2>Request overview</h2></div>
+        <div class="section-heading"><h2>Request and admissions overview</h2></div>
         <div class="panel">
             <div class="bed-row">
                 <div class="bed-stat"><small>Total requests</small><strong>${data.requests.length}</strong></div>

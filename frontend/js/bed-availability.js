@@ -58,8 +58,12 @@ function hospitalCard(h, showMatch = false, score = 0) {
 function bedsPage() {
     const t = totals();
 
+    if (data.hospitals.length === 0 && typeof syncFromDatabase === "function") {
+        syncFromDatabase();
+    }
+
     return `
-        ${heading("HOSPITAL NETWORK", "Bed <span>availability.</span>", "Review sample hospital capacity and available facilities.")}
+        ${heading("HOSPITAL NETWORK", "Bed <span>availability.</span>", "Review live hospital capacity, bed availability and load status.")}
         ${statsHTML([
             stat("▦", "General beds", t.general, "blue"),
             stat("✚", "ICU beds", t.icu, "red"),
@@ -71,7 +75,9 @@ function bedsPage() {
             <input class="search-input" id="bedSearch" placeholder="Search hospital or area...">
         </div>
         <div class="card-grid" id="bedCards">
-            ${data.hospitals.map(h => hospitalCard(h)).join("")}
+            ${data.hospitals.length > 0
+                ? data.hospitals.map(h => hospitalCard(h)).join("")
+                : emptyState('Connecting to database... <br><br><button class="btn btn-primary" onclick="syncFromDatabase()">Load Live Hospitals</button>')}
         </div>
     `;
 }

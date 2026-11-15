@@ -7,24 +7,43 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const { isConfigured, supabase } = require("./supabaseClient");
+const { isConfigured, supabase, getSupabaseHospitals, getSupabaseRequests } = require("./supabaseClient");
 const { handleAuthRoutes } = require("./routes/auth");
 const { handleHospitalRoutes } = require("./routes/hospitals");
 const { handleRequestRoutes } = require("./routes/requests");
+const { handleTriageRoutes } = require("./routes/triage");
 
 const PORT = process.env.PORT || 5001;
 const DB_FILE = path.join(__dirname, "data", "db.json");
 
-// In-memory DB loaded from JSON
+// Dynamic in-memory cache synchronized with live Supabase database
 let db = { hospitals: [], requests: [] };
 
-try {
-    if (fs.existsSync(DB_FILE)) {
-        const fileContent = fs.readFileSync(DB_FILE, "utf-8");
-        db = JSON.parse(fileContent);
+async function syncWithDatabase() {
+    if (isConfigured && supabase) {
+        try {
+            const liveHospitals = await getSupabaseHospitals();
+            if (liveHospitals && liveHospitals.length > 0) {
+                db.hospitals = liveHospitals;
+                console.log(`✓ Loaded ${liveHospitals.length} hospitals from Supabase.`);
+            }
+            const liveRequests = await getSupabaseRequests();
+            if (liveRequests) {
+                db.requests = liveRequests;
+                console.log(`✓ Loaded ${liveRequests.length} emergency requests from Supabase.`);
+            }
+            saveDB();
+        } catch (e) {
+            console.warn("Notice: Initial Supabase sync skipped:", e.message);
+        }
+    } else if (fs.existsSync(DB_FILE)) {
+        try {
+            const fileContent = fs.readFileSync(DB_FILE, "utf-8");
+            db = JSON.parse(fileContent);
+        } catch (err) {
+            console.error("Error reading db.json cache:", err);
+        }
     }
-} catch (err) {
-    console.error("Error loading db.json:", err);
 }
 
 function saveDB() {
@@ -75,17 +94,22 @@ const server = http.createServer((req, res) => {
             res.end(JSON.stringify({
                 status: "healthy",
                 system: "PRAN Emergency Coordination Backend",
-                version: "1.0.0",
+                version: "2.0.0",
+                alignedWith: "Hospital Bed Routing System",
                 supabaseConnected: isConfigured && Boolean(supabase),
                 database: isConfigured ? "supabase" : "local_storage",
                 endpoints: [
                     "GET  /api/health",
                     "GET  /api/supabase/status",
+                    "GET  /api/supabase/config",
                     "POST /api/auth/login",
                     "POST /api/auth/guest",
                     "GET  /api/hospitals",
                     "GET  /api/hospitals/:id",
                     "PUT  /api/hospitals/:id/capacity",
+                    "PUT  /api/admin/hospitals/:id/beds",
+                    "GET  /api/admin/dashboard",
+                    "POST /api/triage",
                     "GET  /api/requests",
                     "POST /api/requests",
                     "GET  /api/requests/:id",
@@ -116,6 +140,13 @@ const server = http.createServer((req, res) => {
             return;
         }
 
+        const triageResult = await handleTriageRoutes(req, res, pathname, body, db);
+        if (triageResult) {
+            res.writeHead(triageResult.status, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(triageResult.data));
+            return;
+        }
+
         const hospitalResult = await handleHospitalRoutes(req, res, pathname, body, db);
         if (hospitalResult) {
             saveDB();
@@ -138,8 +169,9 @@ const server = http.createServer((req, res) => {
     });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, async () => {
     console.log(`PRAN Backend Server running on http://localhost:${PORT}`);
+    await syncWithDatabase();
 });
 
 module.exports = server;
