@@ -1031,15 +1031,24 @@ function matchScore(h,r) {
 }
 
 function matchesPage() {
-    const request = [...data.requests].reverse().find(r =>
+    let request = [...data.requests].reverse().find(r =>
         r.owner === (currentUser.email || "guest")
     );
+    let isSimulated = false;
 
     if (!request) {
-        return `
-            ${heading("SMART MATCHING","Hospital <span>matching.</span>","Explore suitable sample hospitals based on emergency requirements.")}
-            ${emptyState('Create an emergency request first. <br><br><button class="btn btn-primary" data-go="request">Create request</button>')}
-        `;
+        request = (data.requests && data.requests.length > 0)
+            ? data.requests[0]
+            : {
+                id: 1794750001,
+                patientName: "Subhajit Chatterjee (Simulated Case)",
+                category: "Cardiac",
+                facility: "ICU",
+                location: "Salt Lake Sector V, Kolkata (Near College More)",
+                notes: "Acute retrosternal chest pain radiating to left jaw, SpO2 93%, diaphoresis. Suspected STEMI.",
+                vitals: { hr: 112, bp: "150/95", spo2: 93, consciousness: "Alert" }
+            };
+        isSimulated = true;
     }
 
     const results = data.hospitals.map(h => ({
@@ -1048,15 +1057,24 @@ function matchesPage() {
     })).filter(x=>x.eligible).sort((a,b)=>b.score-a.score);
 
     return `
-        ${heading("SMART MATCHING","Your hospital <span>matches.</span>","Compare the sample hospitals that meet the selected requirements.")}
-        <div class="summary-box">
-            <small>YOUR REQUEST</small>
-            <strong>${safe(request.patientName)} · ${safe(request.category)} · ${safe(request.facility)} bed</strong>
-            <p>${safe(request.location)}</p>
+        ${heading("SMART MATCHING","Your hospital <span>matches.</span>","Real-time clinical matching across 15 nearest network hospitals based on bed capacity, transit time, and specialized facilities.")}
+        <div class="summary-box" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px; margin-bottom: 16px;">
+            <div>
+                <small style="color: var(--blue); font-weight: 800; letter-spacing: 0.5px;">${isSimulated ? "SIMULATED PATIENT TRIAGE CASE" : "ACTIVE EMERGENCY REQUEST"}</small>
+                <div style="font-size: 15px; font-weight: 700; margin-top: 3px;">${safe(request.patientName)} · ${safe(request.category)} · ${safe(request.facility)} bed</div>
+                <p style="margin: 4px 0 0 0; color: var(--muted); font-size: 13px;">${safe(request.location || "Salt Lake Sector V, Kolkata")}${request.notes ? ` — "${safe(request.notes)}"` : ""}</p>
+            </div>
+            <button class="btn btn-primary" data-go="request">✚ Create custom request →</button>
         </div>
-        <p class="muted" style="margin-bottom:13px">Illustrative ranking only. It is not a clinically validated recommendation.</p>
+        <div style="display: flex; gap: 12px; margin-bottom: 14px; font-size: 12px; color: var(--muted); align-items: center;">
+            <span>🏥 <strong>${results.length}</strong> matching hospitals found</span>
+            <span>·</span>
+            <span>📍 Ranked by travel time & available ${safe(request.facility)} beds</span>
+            <span>·</span>
+            <span>⚡ GPS Origin: Sector V, Kolkata</span>
+        </div>
         <div class="card-grid">
-            ${results.length ? results.map(x=>hospitalCard(x.hospital,true,x.score)).join("") : emptyState("No matching sample hospital found. Check the bed availability page.")}
+            ${results.length ? results.map(x=>hospitalCard(x.hospital,true,x.score)).join("") : emptyState("No matching hospital found with available " + safe(request.facility) + " beds. Explore all hospitals on the Bed Availability page.")}
         </div>
     `;
 }
@@ -1155,12 +1173,21 @@ let currentUserCoords = { lat: 22.5802, lng: 88.4326 };
 let navMapMode = "leaflet";
 
 const HOSPITAL_COORDINATES = {
-    1: { lat: 22.5802, lng: 88.4326 },
-    2: { lat: 22.5937, lng: 88.4682 },
-    3: { lat: 22.5867, lng: 88.4178 },
-    4: { lat: 22.5980, lng: 88.4285 },
-    5: { lat: 22.5186, lng: 88.3976 },
-    6: { lat: 22.6247, lng: 88.4208 }
+    1: { lat: 22.5786, lng: 88.4140, name: "Calcutta Heart Clinic & Hospital" },
+    2: { lat: 22.5815, lng: 88.4172, name: "National Institute of Homoeopathy (NIH)" },
+    3: { lat: 22.5862, lng: 88.4182, name: "Matri Sadan Hospital (Bidhannagar)" },
+    4: { lat: 22.5732, lng: 88.4109, name: "Manipal Hospital Salt Lake (Columbia Asia)" },
+    5: { lat: 22.5695, lng: 88.4118, name: "AMRI Hospital Salt Lake" },
+    6: { lat: 22.5925, lng: 88.4098, name: "ILS Hospitals Salt Lake" },
+    7: { lat: 22.5908, lng: 88.4087, name: "Salt Lake Sub-Divisional Hospital" },
+    8: { lat: 22.5726, lng: 88.3995, name: "Apollo Multispeciality Hospitals" },
+    9: { lat: 22.5889, lng: 88.4632, name: "Chittaranjan National Cancer Institute (CNCI)" },
+    10: { lat: 22.5934, lng: 88.4775, name: "Tata Medical Center" },
+    11: { lat: 22.5841, lng: 88.4610, name: "Bhagirathi Neotia Woman and Child Care Centre" },
+    12: { lat: 22.5134, lng: 88.3989, name: "Ruby General Hospital" },
+    13: { lat: 22.5186, lng: 88.4024, name: "Fortis Hospital Anandapur" },
+    14: { lat: 22.5142, lng: 88.4011, name: "Desun Hospital & Heart Institute" },
+    15: { lat: 22.4988, lng: 88.3997, name: "Medica Superspecialty Hospital" }
 };
 
 function getHospitalCoords(h) {

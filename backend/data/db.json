@@ -2,12 +2,98 @@
   "hospitals": [
     {
       "id": 1,
-      "name": "Aster Care Medical Centre",
-      "area": "Salt Lake Sector V, Kolkata",
-      "distance": 3.2,
-      "general": 14,
-      "icu": 6,
-      "staff": 10,
+      "name": "Calcutta Heart Clinic & Hospital",
+      "area": "HB Block, Sector III, Salt Lake, Kolkata",
+      "distance": 1.9,
+      "general": 24,
+      "icu": 8,
+      "staff": 14,
+      "categories": [
+        "Cardiac",
+        "General",
+        "Accident"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Cardiac Care",
+        "CCU",
+        "Cath Lab"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 2,
+      "name": "National Institute of Homoeopathy (NIH)",
+      "area": "GE Block, Sector III, Salt Lake, Kolkata",
+      "distance": 1.6,
+      "general": 38,
+      "icu": 4,
+      "staff": 12,
+      "categories": [
+        "General",
+        "Accident"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "OPD",
+        "Diagnostics"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 3,
+      "name": "Matri Sadan Hospital (Bidhannagar)",
+      "area": "EE Block, Sector II, Salt Lake, Kolkata",
+      "distance": 2.1,
+      "general": 18,
+      "icu": 5,
+      "staff": 9,
+      "categories": [
+        "General",
+        "Maternity",
+        "Accident"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Maternity Care",
+        "Trauma Care"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 4,
+      "name": "Manipal Hospital Salt Lake (Columbia Asia)",
+      "area": "IB Block, Sector III, Salt Lake, Kolkata",
+      "distance": 2.4,
+      "general": 32,
+      "icu": 12,
+      "staff": 22,
+      "categories": [
+        "Cardiac",
+        "Accident",
+        "Neurological",
+        "General"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Trauma Care",
+        "Cardiac Care",
+        "Neuro ICU"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 5,
+      "name": "AMRI Hospital Salt Lake",
+      "area": "JC Block, Sector III, Salt Lake, Kolkata",
+      "distance": 2.6,
+      "general": 45,
+      "icu": 16,
+      "staff": 28,
       "categories": [
         "Accident",
         "Cardiac",
@@ -18,107 +104,234 @@
         "Emergency",
         "ICU",
         "Trauma Care",
-        "Cardiac Care"
-      ],
-      "created_at": "2026-11-15T13:47:12.711503+00:00"
-    },
-    {
-      "id": 2,
-      "name": "Northview Multispeciality Hospital",
-      "area": "New Town, Kolkata",
-      "distance": 5.6,
-      "general": 8,
-      "icu": 2,
-      "staff": 6,
-      "categories": [
-        "Accident",
-        "Cardiac",
-        "General"
-      ],
-      "facilities": [
-        "Emergency",
-        "ICU",
-        "Trauma Care"
-      ],
-      "created_at": "2026-11-15T13:47:12.711503+00:00"
-    },
-    {
-      "id": 3,
-      "name": "Lakeside Emergency Centre",
-      "area": "Bidhannagar, Kolkata",
-      "distance": 6.8,
-      "general": 5,
-      "icu": 3,
-      "staff": 5,
-      "categories": [
-        "Cardiac",
-        "Neurological",
-        "General"
-      ],
-      "facilities": [
-        "Emergency",
-        "ICU",
         "Cardiac Care",
-        "Neuro Care"
+        "Dialysis"
       ],
-      "created_at": "2026-11-15T13:47:12.711503+00:00"
-    },
-    {
-      "id": 4,
-      "name": "Greenline General Hospital",
-      "area": "Kestopur, Kolkata",
-      "distance": 8.1,
-      "general": 18,
-      "icu": 0,
-      "staff": 4,
-      "categories": [
-        "Accident",
-        "General"
-      ],
-      "facilities": [
-        "Emergency",
-        "Trauma Care"
-      ],
-      "created_at": "2026-11-15T13:47:12.711503+00:00"
-    },
-    {
-      "id": 5,
-      "name": "City Heart & Neuro Institute",
-      "area": "EM Bypass, Kolkata",
-      "distance": 10.4,
-      "general": 6,
-      "icu": 5,
-      "staff": 9,
-      "categories": [
-        "Cardiac",
-        "Neurological",
-        "General"
-      ],
-      "facilities": [
-        "Emergency",
-        "ICU",
-        "Cardiac Care",
-        "Neuro Care"
-      ],
-      "created_at": "2026-11-15T13:47:12.711503+00:00"
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
     },
     {
       "id": 6,
-      "name": "Riverbend Community Hospital",
-      "area": "Dum Dum, Kolkata",
-      "distance": 11.7,
-      "general": 10,
-      "icu": 1,
-      "staff": 3,
+      "name": "ILS Hospitals Salt Lake",
+      "area": "DD Block, Sector I, Salt Lake, Kolkata",
+      "distance": 2.9,
+      "general": 26,
+      "icu": 9,
+      "staff": 15,
       "categories": [
+        "Accident",
+        "Cardiac",
+        "General"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Laparoscopy",
+        "Trauma Care"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 7,
+      "name": "Salt Lake Sub-Divisional Hospital",
+      "area": "DD Block, Sector I, Salt Lake, Kolkata",
+      "distance": 3,
+      "general": 52,
+      "icu": 6,
+      "staff": 18,
+      "categories": [
+        "Accident",
+        "General",
+        "Maternity"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Trauma Care",
+        "Blood Bank"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 8,
+      "name": "Apollo Multispeciality Hospitals",
+      "area": "58 Canal Circular Road, Kadapara, Kolkata",
+      "distance": 3.5,
+      "general": 58,
+      "icu": 22,
+      "staff": 35,
+      "categories": [
+        "Cardiac",
+        "Neurological",
         "Accident",
         "General"
       ],
       "facilities": [
         "Emergency",
-        "Trauma Care"
+        "ICU",
+        "Trauma Care",
+        "Cardiac Care",
+        "Neuro Care",
+        "Organ Transplant"
       ],
-      "created_at": "2026-11-15T13:47:12.711503+00:00"
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 9,
+      "name": "Chittaranjan National Cancer Institute (CNCI)",
+      "area": "Street No. 299, Action Area I, New Town, Kolkata",
+      "distance": 3.8,
+      "general": 40,
+      "icu": 10,
+      "staff": 20,
+      "categories": [
+        "Oncology",
+        "General",
+        "Neurological"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Oncology Care",
+        "Chemotherapy",
+        "Radiology"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 10,
+      "name": "Tata Medical Center",
+      "area": "14 MAR, Action Area II, New Town, Kolkata",
+      "distance": 5.2,
+      "general": 36,
+      "icu": 14,
+      "staff": 26,
+      "categories": [
+        "Oncology",
+        "General",
+        "Cardiac"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Oncology Care",
+        "Surgical ICU",
+        "PET-CT"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 11,
+      "name": "Bhagirathi Neotia Woman and Child Care Centre",
+      "area": "Action Area I, New Town, Kolkata",
+      "distance": 3.6,
+      "general": 20,
+      "icu": 7,
+      "staff": 14,
+      "categories": [
+        "Maternity",
+        "Pediatric",
+        "General"
+      ],
+      "facilities": [
+        "Emergency",
+        "NICU",
+        "PICU",
+        "Maternity Care"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 12,
+      "name": "Ruby General Hospital",
+      "area": "Kasba Golpark, EM Bypass, Kolkata",
+      "distance": 6.2,
+      "general": 30,
+      "icu": 11,
+      "staff": 19,
+      "categories": [
+        "Accident",
+        "Cardiac",
+        "Neurological",
+        "General"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Trauma Care",
+        "Cardiac Care",
+        "Burn Unit"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 13,
+      "name": "Fortis Hospital Anandapur",
+      "area": "730 Anandapur, EM Bypass, Kolkata",
+      "distance": 5.9,
+      "general": 42,
+      "icu": 15,
+      "staff": 24,
+      "categories": [
+        "Cardiac",
+        "Accident",
+        "Neurological",
+        "General"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Trauma Care",
+        "Cardiac Care",
+        "Cath Lab"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 14,
+      "name": "Desun Hospital & Heart Institute",
+      "area": "720 Desun More, Kasba Golpark, EM Bypass, Kolkata",
+      "distance": 6.4,
+      "general": 48,
+      "icu": 18,
+      "staff": 25,
+      "categories": [
+        "Cardiac",
+        "Accident",
+        "Neurological",
+        "General"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Cardiac Care",
+        "Trauma Care",
+        "Burns ICU"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
+    },
+    {
+      "id": 15,
+      "name": "Medica Superspecialty Hospital",
+      "area": "127 Mukundapur, EM Bypass, Kolkata",
+      "distance": 7.6,
+      "general": 60,
+      "icu": 24,
+      "staff": 32,
+      "categories": [
+        "Cardiac",
+        "Accident",
+        "Neurological",
+        "General"
+      ],
+      "facilities": [
+        "Emergency",
+        "ICU",
+        "Trauma Care",
+        "Cardiac Care",
+        "ECMO",
+        "Stroke Unit"
+      ],
+      "created_at": "2026-11-15T16:08:59.795851+00:00"
     }
   ],
   "requests": [
@@ -137,17 +350,17 @@
       "createdAt": "2026-11-15T14:16:11.943556+00:00"
     },
     {
-      "id": 1794750001,
-      "patientName": "Ananya Mukherjee",
-      "age": 34,
-      "contact": "9830012345",
-      "category": "Cardiac",
+      "id": 1794750003,
+      "patientName": "Priyanka Das",
+      "age": 62,
+      "contact": "9832234567",
+      "category": "Neurological",
       "facility": "ICU",
-      "location": "Salt Lake Sector II, Kolkata",
-      "notes": "Severe chest tightness, history of hypertension",
-      "status": "Pending",
-      "hospitalId": 1,
-      "owner": "ananya@example.com",
+      "location": "Bidhannagar Karunamoyee, Kolkata",
+      "notes": "Sudden onset slurred speech and facial weakness, suspected stroke",
+      "status": "Matching",
+      "hospitalId": null,
+      "owner": "priyanka@example.com",
       "createdAt": "2026-11-15T14:15:42.760428+00:00"
     },
     {
@@ -160,22 +373,22 @@
       "location": "New Town Action Area I, Kolkata",
       "notes": "Motorcycle collision, leg fracture and abrasions",
       "status": "Accepted",
-      "hospitalId": 2,
+      "hospitalId": null,
       "owner": "ambulance_04",
       "createdAt": "2026-11-15T14:15:42.760428+00:00"
     },
     {
-      "id": 1794750003,
-      "patientName": "Priyanka Das",
-      "age": 62,
-      "contact": "9832234567",
-      "category": "Neurological",
+      "id": 1794750001,
+      "patientName": "Ananya Mukherjee",
+      "age": 34,
+      "contact": "9830012345",
+      "category": "Cardiac",
       "facility": "ICU",
-      "location": "Bidhannagar Karunamoyee, Kolkata",
-      "notes": "Sudden onset slurred speech and facial weakness, suspected stroke",
-      "status": "Matching",
+      "location": "Salt Lake Sector II, Kolkata",
+      "notes": "Severe chest tightness, history of hypertension",
+      "status": "Pending",
       "hospitalId": null,
-      "owner": "priyanka@example.com",
+      "owner": "ananya@example.com",
       "createdAt": "2026-11-15T14:15:42.760428+00:00"
     }
   ]

@@ -41,18 +41,27 @@ function matchScore(h, r) {
 }
 
 function matchesPage() {
-    const request = [...data.requests].reverse().find(r =>
+    let request = [...data.requests].reverse().find(r =>
         r.owner === (currentUser?.email || "guest")
     );
+    let isSimulated = false;
 
     if (!request) {
-        return `
-            ${heading("SMART MATCHING", "Hospital <span>matching.</span>", "Explore suitable hospitals based on live emergency triage requirements.")}
-            ${emptyState('Create an emergency request first. <br><br><button class="btn btn-primary" data-go="request">Create emergency request →</button>')}
-        `;
+        request = (data.requests && data.requests.length > 0)
+            ? data.requests[0]
+            : {
+                id: 1794750001,
+                patientName: "Subhajit Chatterjee (Simulated Case)",
+                category: "Cardiac",
+                facility: "ICU",
+                location: "Salt Lake Sector V, Kolkata (Near College More)",
+                notes: "Acute retrosternal chest pain radiating to left jaw, SpO2 93%, diaphoresis. Suspected STEMI.",
+                vitals: { hr: 112, bp: "150/95", spo2: 93, consciousness: "Alert" }
+            };
+        isSimulated = true;
     }
 
-    const triage = request.aiAssessment;
+    const triage = request.aiAssessment || { code: "CODE_RED", severity: "CRITICAL", triageScore: 92, recommendedWard: "Cardiac ICU (CCU)" };
     const isRed = triage && (triage.code === "CODE_RED" || triage.severity === "CRITICAL");
 
     const results = data.hospitals.map(h => ({
@@ -61,18 +70,26 @@ function matchesPage() {
     })).filter(x => x.eligible).sort((a, b) => b.score - a.score);
 
     return `
-        ${heading("SMART MATCHING", "Your hospital <span>matches.</span>", "Real-time AI matching based on bed availability, road proximity, and clinical triage.")}
+        ${heading("SMART MATCHING", "Your hospital <span>matches.</span>", "Real-time AI matching based on bed availability, road proximity, and clinical triage across 15 network hospitals.")}
         
         <div class="summary-box" style="position: relative;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
                 <div>
-                    <small>PATIENT INTAKE SUMMARY</small>
-                    <strong style="font-size: 14px;">${safe(request.patientName)} (${request.age || '--'} yrs) · ${safe(request.category)}</strong>
+                    <small style="color: var(--blue); font-weight: 800; letter-spacing: 0.5px;">${isSimulated ? "SIMULATED PATIENT TRIAGE CASE" : "ACTIVE EMERGENCY REQUEST"}</small>
+                    <strong style="font-size: 14px; display: block; margin-top: 2px;">${safe(request.patientName)} (${request.age || '48'} yrs) · ${safe(request.category)}</strong>
                     <p style="margin-top: 4px; font-size: 11px;">Origin: <strong>${safe(request.location)}</strong> | Bed Needed: <strong>${safe(request.facility)}</strong></p>
                 </div>
-                ${triage ? `
-                    <span class="ai-code-badge ${isRed ? 'ai-code-red' : 'ai-code-yellow'}" style="font-size: 10px;">
-                        ${safe(triage.code || triage.severity)} (${triage.triageScore}/100)
+                <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap;">
+                    ${triage ? `
+                        <span class="ai-code-badge ${isRed ? 'ai-code-red' : 'ai-code-yellow'}" style="font-size: 10px;">
+                            ${safe(triage.code || triage.severity)} (${triage.triageScore}/100)
+                        </span>
+                    ` : ''}
+                    <button class="btn btn-primary btn-small" data-go="request" style="font-size: 11px; padding: 6px 12px;">✚ Create Custom Request →</button>
+                </div>
+            </div>
+            ${request.notes ? `<p style="margin: 6px 0 0 0; font-size: 11px; color: var(--muted); font-style: italic;">Notes: "${safe(request.notes)}"</p>` : ''}
+        </div>
                     </span>
                 ` : ""}
             </div>

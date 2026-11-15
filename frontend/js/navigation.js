@@ -8,14 +8,23 @@ let navRoutePolyline = null;
 let currentUserCoords = { lat: 22.5802, lng: 88.4326 }; // Default: Salt Lake / Central Kolkata
 let navMapMode = "leaflet"; // 'leaflet' or 'embed'
 
-// Known hospital GPS coordinates
+// Known hospital GPS coordinates matching Salt Lake Sector V navigation area
 const HOSPITAL_COORDINATES = {
-    1: { lat: 22.5802, lng: 88.4326 }, // Aster Care Medical Centre (Salt Lake Sec V)
-    2: { lat: 22.5937, lng: 88.4682 }, // Northview Multispeciality (New Town)
-    3: { lat: 22.5867, lng: 88.4178 }, // Lakeside Emergency Centre (Bidhannagar)
-    4: { lat: 22.5980, lng: 88.4285 }, // Greenline General Hospital (Kestopur)
-    5: { lat: 22.5186, lng: 88.3976 }, // City Heart & Neuro Institute (EM Bypass)
-    6: { lat: 22.6247, lng: 88.4208 }  // Riverbend Community Hospital (Dum Dum)
+    1: { lat: 22.5786, lng: 88.4140, name: "Calcutta Heart Clinic & Hospital" },
+    2: { lat: 22.5815, lng: 88.4172, name: "National Institute of Homoeopathy (NIH)" },
+    3: { lat: 22.5862, lng: 88.4182, name: "Matri Sadan Hospital (Bidhannagar)" },
+    4: { lat: 22.5732, lng: 88.4109, name: "Manipal Hospital Salt Lake (Columbia Asia)" },
+    5: { lat: 22.5695, lng: 88.4118, name: "AMRI Hospital Salt Lake" },
+    6: { lat: 22.5925, lng: 88.4098, name: "ILS Hospitals Salt Lake" },
+    7: { lat: 22.5908, lng: 88.4087, name: "Salt Lake Sub-Divisional Hospital" },
+    8: { lat: 22.5726, lng: 88.3995, name: "Apollo Multispeciality Hospitals" },
+    9: { lat: 22.5889, lng: 88.4632, name: "Chittaranjan National Cancer Institute (CNCI)" },
+    10: { lat: 22.5934, lng: 88.4775, name: "Tata Medical Center" },
+    11: { lat: 22.5841, lng: 88.4610, name: "Bhagirathi Neotia Woman and Child Care Centre" },
+    12: { lat: 22.5134, lng: 88.3989, name: "Ruby General Hospital" },
+    13: { lat: 22.5186, lng: 88.4024, name: "Fortis Hospital Anandapur" },
+    14: { lat: 22.5142, lng: 88.4011, name: "Desun Hospital & Heart Institute" },
+    15: { lat: 22.4988, lng: 88.3997, name: "Medica Superspecialty Hospital" }
 };
 
 function getHospitalCoords(h) {
