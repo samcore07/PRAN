@@ -1,20 +1,68 @@
-<!-- HOSPITAL NAVIGATION & MAP COMPONENT TEMPLATE -->
+<!-- HOSPITAL NAVIGATION & LIVE MAP COMPONENT TEMPLATE -->
 <template id="navigation-template">
     <div class="page-heading">
-        <span class="eyebrow">LOCATION SUPPORT</span>
+        <span class="eyebrow">LOCATION & TRANSIT ROUTING</span>
         <h1>Hospital <span>navigation.</span></h1>
-        <p>Open the selected hospital's location in Google Maps.</p>
+        <p>Interactive emergency route mapping with real-time transit ETA and GPS navigation.</p>
     </div>
-    <div class="map-panel">
-        <div class="map-pin">✚</div>
+
+    <!-- LIVE INTERACTIVE MAP CONTAINER -->
+    <div class="nav-map-wrap">
+        <div id="navMapCanvas" class="nav-map-canvas"></div>
+        <div class="nav-map-overlay-badge" id="navMapOverlayBadge">
+            <span class="nav-live-dot"></span> <span id="navMapBadgeText">Live Route Navigation</span>
+        </div>
     </div>
-    <div class="panel">
-        <h2 id="navHospitalName"></h2>
-        <p class="panel-subtitle" id="navHospitalArea"></p>
-        <label class="field">Select destination
-            <select id="navigationSelect"></select>
-        </label>
-        <button class="btn btn-primary" id="openGoogleMapsBtn">Open Google Maps →</button>
-        <p class="muted" style="margin-top:12px">Map search only. No live ambulance tracking or ETA is provided.</p>
+
+    <!-- METRICS & DESTINATION CONTROLS -->
+    <div class="panel nav-detail-panel">
+        <div class="nav-header-row">
+            <div>
+                <span class="eyebrow">SELECTED DESTINATION</span>
+                <h2 id="navHospitalName">Loading destination...</h2>
+                <p class="panel-subtitle" id="navHospitalArea"></p>
+            </div>
+            <div class="nav-quick-actions">
+                <button class="btn btn-light btn-small" id="btnLocateMe">⌖ Locate My GPS</button>
+                <button class="btn btn-light btn-small" id="btnToggleMapMode">⇄ Switch Map View</button>
+            </div>
+        </div>
+
+        <div class="nav-metrics-grid" id="navMetricsGrid">
+            <div class="nav-metric-card">
+                <small>Distance</small>
+                <strong id="navDistance">-- km</strong>
+            </div>
+            <div class="nav-metric-card">
+                <small>Estimated Transit ETA</small>
+                <strong id="navETA">-- mins</strong>
+            </div>
+            <div class="nav-metric-card">
+                <small>Available ICU Beds</small>
+                <strong id="navICU" class="text-red">--</strong>
+            </div>
+            <div class="nav-metric-card">
+                <small>Available General Beds</small>
+                <strong id="navGeneral" class="text-blue">--</strong>
+            </div>
+        </div>
+
+        <div class="form-grid" style="margin-top: 15px;">
+            <label class="field full">Change Hospital Destination
+                <select id="navigationSelect"></select>
+            </label>
+        </div>
+
+        <div class="nav-actions-row">
+            <button class="btn btn-primary" id="btnOpenDirections">
+                <span>➤</span> Start Turn-by-Turn GPS Navigation
+            </button>
+            <a class="btn btn-light" id="btnCallEmergency" href="tel:112">
+                <span>📞</span> Emergency Hotline (112)
+            </a>
+        </div>
+        <p class="muted" style="margin-top:14px">
+            Calculated using real-world coordinates and live city traffic estimates. Opens in Google Maps navigation app on mobile devices.
+        </p>
     </div>
 </template>

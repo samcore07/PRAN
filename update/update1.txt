@@ -280,4 +280,25 @@ Enhancements Added:
    - Empty initial cache state: all hospitals and bed availability are queried
      live from Supabase PostgreSQL tables.
    - Automatic fallback discovery for seamless client-server database synchronization.
+
+8. LIVE NAVIGATION MAP API INTEGRATION
+--------------------------------------------------------------------------------
+Added interactive mapping and turn-by-turn routing across navigation pages:
+1. Interactive Leaflet & OpenStreetMap Canvas:
+   - Embedded street tile map rendered inside the navigation panel.
+   - Real-world GPS pins for all connected hospitals with popups displaying live
+     ICU and General bed availability.
+   - Route polyline connecting patient/ambulance origin to destination hospital.
+
+2. Turn-by-Turn GPS Navigation URL API:
+   - "Start Turn-by-Turn GPS Navigation" integrates with Google Maps Navigation API:
+     https://www.google.com/maps/dir/?api=1&origin={lat},{lng}&destination={lat},{lng}&travelmode=driving
+   - Directly launches native voice-guided navigation on Android, iOS, and desktop.
+
+3. HTML5 Geolocation API ("Locate My GPS"):
+   - Acquires live device coordinates via navigator.geolocation.
+   - Calculates real-time road distance and travel ETA in minutes.
+
+4. Dual View Modes:
+   - Seamlessly toggle between Interactive Leaflet Route Map and Google Maps Embed.
 ================================================================================

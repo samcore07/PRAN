@@ -375,6 +375,24 @@ td strong { color: var(--navy); }
 .map-panel { min-height: 230px; border-radius: 12px; border: 1px solid #dcebe5; background-color: #eaf3ef; background-image: linear-gradient(35deg, transparent 47%, #d6e5df 48%, #d6e5df 50%, transparent 51%), linear-gradient(120deg, transparent 47%, #d6e5df 48%, #d6e5df 50%, transparent 51%); background-size: 75px 75px; display: grid; place-items: center; margin-bottom: 16px; }
 .map-pin { width: 57px; height: 57px; background: var(--blue); color: white; display: grid; place-items: center; border-radius: 50% 50% 50% 10%; transform: rotate(-45deg); font-size: 26px; }
 .map-caption { color: #718a86; font-size: 10px; margin-top: -45px; }
+
+/* LIVE NAVIGATION MAP STYLES */
+.nav-map-wrap { height: 380px; border-radius: 14px; border: 1px solid var(--border); background-color: #eaf3ef; position: relative; overflow: hidden; margin-bottom: 16px; box-shadow: var(--shadow); }
+.nav-map-canvas { width: 100%; height: 100%; min-height: 380px; z-index: 1; }
+.nav-map-iframe { width: 100%; height: 100%; min-height: 380px; border: 0; }
+.nav-map-overlay-badge { position: absolute; top: 14px; right: 14px; background: rgba(21, 59, 96, 0.92); color: white; padding: 6px 12px; border-radius: 20px; font-size: 10px; font-weight: 700; z-index: 1000; display: flex; align-items: center; gap: 7px; backdrop-filter: blur(6px); box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18); }
+.nav-live-dot { width: 8px; height: 8px; border-radius: 50%; background: #24966e; box-shadow: 0 0 8px #24966e; display: inline-block; animation: navPulse 1.8s infinite; }
+@keyframes navPulse { 0% { transform: scale(0.95); opacity: 0.8; } 50% { transform: scale(1.3); opacity: 1; } 100% { transform: scale(0.95); opacity: 0.8; } }
+.nav-detail-panel { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 24px; box-shadow: var(--shadow); }
+.nav-header-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.nav-quick-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.nav-metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin: 16px 0 10px; }
+.nav-metric-card { background: #f7fafc; border: 1px solid var(--border); border-radius: 9px; padding: 12px 14px; }
+.nav-metric-card small { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; display: block; }
+.nav-metric-card strong { font-size: 18px; color: var(--navy); margin-top: 4px; display: block; }
+.nav-metric-card strong.text-red { color: var(--red); }
+.nav-metric-card strong.text-blue { color: var(--blue); }
+.nav-actions-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
 .role-chip { display: inline-block; padding: 6px 9px; background: #eaf4fb; color: var(--blue); border-radius: 20px; font-size: 9px; font-weight: 800; }
 
 /* TOAST */
