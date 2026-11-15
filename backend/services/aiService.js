@@ -14,7 +14,10 @@
 const https = require('https');
 const http = require('http');
 
-function getGroqKey() {
+function getGroqKey(customKey) {
+  if (customKey && typeof customKey === 'string' && customKey.trim().length > 5) {
+    return customKey.trim();
+  }
   return (process.env.GROQ_API_KEY || '').trim();
 }
 
@@ -24,14 +27,14 @@ function getGroqModel() {
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 
-function isAiConfigured() {
-  const key = getGroqKey();
+function isAiConfigured(customKey) {
+  const key = getGroqKey(customKey);
   return Boolean(key && key.length > 5 && !key.includes('your_groq_api_key'));
 }
 
-function getAiStatus() {
+function getAiStatus(customKey) {
   return {
-    configured: isAiConfigured(),
+    configured: isAiConfigured(customKey),
     provider: 'Groq',
     model: getGroqModel(),
     capabilities: [
@@ -49,12 +52,14 @@ function getAiStatus() {
  */
 function callGroqApi(messages, options = {}) {
   return new Promise((resolve, reject) => {
-    if (!isAiConfigured()) {
-      return reject(new Error('GROQ_API_KEY is not configured in .env'));
+    const key = getGroqKey(options.apiKey);
+    if (!key || key.includes('your_groq_api_key')) {
+      return reject(new Error('GROQ_API_KEY is not configured in .env, Vercel, or request'));
     }
 
+    const activeModel = options.model || getGroqModel();
     const payload = JSON.stringify({
-      model: options.model || getGroqModel(),
+      model: activeModel,
       messages,
       temperature: options.temperature ?? 0.2,
       max_tokens: options.max_tokens ?? 1024,
@@ -69,7 +74,7 @@ function callGroqApi(messages, options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${getGroqKey()}`,
+        'Authorization': `Bearer ${key}`,
         'Content-Length': Buffer.byteLength(payload)
       },
       timeout: 12000
@@ -181,8 +186,8 @@ function heuristicTriage(patient) {
 /**
  * Analyze emergency intake using Groq AI
  */
-async function analyzeEmergencyTriage(patient) {
-  if (!isAiConfigured()) {
+async function analyzeEmergencyTriage(patient, customKey) {
+  if (!isAiConfigured(customKey)) {
     return heuristicTriage(patient);
   }
 
@@ -221,11 +226,12 @@ OUTPUT JSON SCHEMA:
     const raw = await callGroqApi([
       { role: 'system', content: 'You are an emergency triage medical AI. Output pure JSON without markdown code fences.' },
       { role: 'user', content: prompt }
-    ], { json: true, temperature: 0.1 });
+    ], { json: true, temperature: 0.1, apiKey: customKey });
 
     const parsed = JSON.parse(raw);
+    const activeModel = getGroqModel();
     return {
-      source: `groq-${GROQ_MODEL}`,
+      source: `groq-${activeModel}`,
       severity: parsed.severity || 'URGENT',
       triageScore: Number(parsed.triageScore) || 70,
       code: parsed.code || 'CODE_YELLOW',
@@ -247,19 +253,20 @@ OUTPUT JSON SCHEMA:
 /**
  * Interactive Emergency Copilot Chatbot
  */
-async function copilotChat(messages, context = {}) {
+async function copilotChat(messages, context = {}, customKey) {
+  const activeModel = getGroqModel();
   const systemPrompt = `You are PRAN Emergency Copilot, an ultra-fast AI assistant for patients, attendants, and ambulance operators.
 You provide instant, calm, actionable medical guidance, CPR instructions, emergency first-aid advice, and hospital triage navigation.
 Always prioritize patient safety. Remind users for immediate life threats to follow live emergency dispatch.
 Keep answers structured, concise, and easy to read during high-stress emergencies.
 
 CURRENT ACTIVE CONTEXT:
-- Connected Hospitals: ${context.hospitalCount || 6}
+- Connected Hospitals: ${context.hospitalCount || 15}
 - Available General Beds: ${context.generalBeds || 'N/A'}
 - Available ICU Beds: ${context.icuBeds || 'N/A'}
 - User Role: ${context.role || 'Guest / Attendant'}`;
 
-  if (!isAiConfigured()) {
+  if (!isAiConfigured(customKey)) {
     const lastMsg = (messages[messages.length - 1]?.content || '').toLowerCase();
     let reply = "Hello! I am the PRAN Emergency Assistant. ";
     if (lastMsg.includes('cpr') || lastMsg.includes('unconscious') || lastMsg.includes('not breathing')) {
@@ -269,7 +276,7 @@ CURRENT ACTIVE CONTEXT:
     } else if (lastMsg.includes('bed') || lastMsg.includes('icu') || lastMsg.includes('hospital')) {
       reply += `🏥 HOSPITAL NETWORK STATUS:\nWe currently have connected hospitals in Kolkata with active ICU and General emergency beds. Use the 'Bed Availability' or 'Hospital Matching' tab to route directly with live GPS.`;
     } else {
-      reply += `I am ready to assist you with emergency triage, first aid steps, or hospital routing. To unlock full AI reasoning with Groq, set your GROQ_API_KEY in .env.`;
+      reply += `I am ready to assist you with emergency triage, first aid steps, or hospital routing. To unlock live Groq AI reasoning, provide your Groq API key in Vercel environment variables or enter it via the 🔑 Key button in the Copilot header.`;
     }
     return {
       message: reply,
@@ -284,11 +291,11 @@ CURRENT ACTIVE CONTEXT:
       ...messages.slice(-6)
     ];
 
-    const reply = await callGroqApi(conversation, { temperature: 0.3, max_tokens: 600 });
+    const reply = await callGroqApi(conversation, { temperature: 0.3, max_tokens: 600, apiKey: customKey });
     return {
       message: reply,
-      source: `groq-${GROQ_MODEL}`,
-      model: GROQ_MODEL
+      source: `groq-${activeModel}`,
+      model: activeModel
     };
   } catch (err) {
     return {
@@ -302,8 +309,8 @@ CURRENT ACTIVE CONTEXT:
 /**
  * Intelligent Match Rationale Generator
  */
-async function explainHospitalMatch(patient, hospital, routingScore) {
-  if (!isAiConfigured()) {
+async function explainHospitalMatch(patient, hospital, routingScore, customKey) {
+  if (!isAiConfigured(customKey)) {
     return `${hospital.name} is recommended because it is within ${hospital.distance || 'optimal'} km (${hospital.etaMinutes || '12'} mins ETA) and has ${hospital.icu || 0} ICU beds and ${hospital.general || 0} General beds available.`;
   }
 
@@ -314,7 +321,7 @@ Hospital features: ${hospital.icu} ICU beds, ${hospital.general} General beds, e
     const rationale = await callGroqApi([
       { role: 'system', content: 'You are a healthcare logistics expert. Be concise and professional.' },
       { role: 'user', content: prompt }
-    ], { temperature: 0.2, max_tokens: 120 });
+    ], { temperature: 0.2, max_tokens: 120, apiKey: customKey });
     return rationale.trim();
   } catch (e) {
     return `${hospital.name} is selected based on real-time bed capacity (${hospital.icu} ICU beds) and fast proximity (${hospital.etaMinutes || '12'} mins travel time).`;

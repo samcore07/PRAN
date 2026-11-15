@@ -6,13 +6,15 @@
 const { isAiConfigured, getAiStatus, analyzeEmergencyTriage, copilotChat, explainHospitalMatch } = require('../services/aiService');
 
 async function handleAiRoutes(req, res, path, body, db) {
+  const customKey = req.headers?.['x-groq-api-key'] || body?.apiKey || '';
+
   // 1. AI System Health & Configuration Status
   if (path === '/api/ai/status' && req.method === 'GET') {
     return {
       status: 200,
       data: {
         success: true,
-        ...getAiStatus()
+        ...getAiStatus(customKey)
       }
     };
   }
@@ -21,7 +23,7 @@ async function handleAiRoutes(req, res, path, body, db) {
   if (path === '/api/ai/triage' && req.method === 'POST') {
     try {
       const patientData = body || {};
-      const assessment = await analyzeEmergencyTriage(patientData);
+      const assessment = await analyzeEmergencyTriage(patientData, customKey);
       return {
         status: 200,
         data: {
@@ -49,13 +51,13 @@ async function handleAiRoutes(req, res, path, body, db) {
       
       // Augment context with live network stats
       const liveContext = {
-        hospitalCount: db.hospitals ? db.hospitals.length : 6,
-        generalBeds: db.hospitals ? db.hospitals.reduce((acc, h) => acc + (h.general || 0), 0) : 0,
-        icuBeds: db.hospitals ? db.hospitals.reduce((acc, h) => acc + (h.icu || 0), 0) : 0,
+        hospitalCount: db?.hospitals ? db.hospitals.length : 15,
+        generalBeds: db?.hospitals ? db.hospitals.reduce((acc, h) => acc + (Number(h.general) || 0), 0) : 0,
+        icuBeds: db?.hospitals ? db.hospitals.reduce((acc, h) => acc + (Number(h.icu) || 0), 0) : 0,
         ...context
       };
 
-      const result = await copilotChat(messages, liveContext);
+      const result = await copilotChat(messages, liveContext, customKey);
       return {
         status: 200,
         data: {
@@ -80,7 +82,7 @@ async function handleAiRoutes(req, res, path, body, db) {
   if (path === '/api/ai/match-rationale' && req.method === 'POST') {
     try {
       const { patient = {}, hospital = {}, routingScore } = body || {};
-      const explanation = await explainHospitalMatch(patient, hospital, routingScore);
+      const explanation = await explainHospitalMatch(patient, hospital, routingScore, customKey);
       return {
         status: 200,
         data: {
