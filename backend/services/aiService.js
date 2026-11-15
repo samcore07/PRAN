@@ -14,19 +14,26 @@
 const https = require('https');
 const http = require('http');
 
-const GROQ_API_KEY = process.env.GROQ_API_KEY ? process.env.GROQ_API_KEY.trim() : '';
-const GROQ_MODEL = process.env.GROQ_MODEL ? process.env.GROQ_MODEL.trim() : 'llama-3.3-70b-versatile';
+function getGroqKey() {
+  return (process.env.GROQ_API_KEY || '').trim();
+}
+
+function getGroqModel() {
+  return (process.env.GROQ_MODEL || 'llama-3.3-70b-versatile').trim();
+}
+
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
 
 function isAiConfigured() {
-  return Boolean(GROQ_API_KEY && GROQ_API_KEY.length > 5 && !GROQ_API_KEY.includes('your_groq_api_key'));
+  const key = getGroqKey();
+  return Boolean(key && key.length > 5 && !key.includes('your_groq_api_key'));
 }
 
 function getAiStatus() {
   return {
     configured: isAiConfigured(),
     provider: 'Groq',
-    model: GROQ_MODEL,
+    model: getGroqModel(),
     capabilities: [
       'Clinical Triage Scoring (0-100)',
       'Pre-Hospital First-Aid Protocol',
@@ -47,7 +54,7 @@ function callGroqApi(messages, options = {}) {
     }
 
     const payload = JSON.stringify({
-      model: options.model || GROQ_MODEL,
+      model: options.model || getGroqModel(),
       messages,
       temperature: options.temperature ?? 0.2,
       max_tokens: options.max_tokens ?? 1024,
@@ -62,7 +69,7 @@ function callGroqApi(messages, options = {}) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${GROQ_API_KEY}`,
+        'Authorization': `Bearer ${getGroqKey()}`,
         'Content-Length': Buffer.byteLength(payload)
       },
       timeout: 12000

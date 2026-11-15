@@ -821,9 +821,29 @@ td strong { color: var(--navy); }
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 16px 18px;
+    padding: 14px 18px;
     background: #f8fafc;
     border-bottom: 1px solid var(--border);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: none;
+}
+.copilot-header:active {
+    cursor: grabbing;
+}
+.copilot-drag-grip {
+    display: inline-flex;
+    align-items: center;
+    color: var(--muted);
+    font-size: 15px;
+    margin-right: 8px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease, color 0.2s ease;
+}
+.copilot-header:hover .copilot-drag-grip {
+    opacity: 1;
+    color: var(--blue);
 }
 [data-theme="dark"] .copilot-header {
     background: #21262d;

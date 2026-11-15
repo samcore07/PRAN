@@ -320,24 +320,109 @@ async function sendCopilotQuery(promptText, extraContext = {}) {
     }
 }
 
+function makeDraggable(element, handle = element) {
+    let isDragging = false;
+    let startX = 0, startY = 0;
+    let initialLeft = 0, initialTop = 0;
+    let hasMoved = false;
+
+    function onPointerDown(e) {
+        if (e.target.closest("button") || e.target.closest("input") || e.target.closest("a")) {
+            return;
+        }
+
+        isDragging = true;
+        hasMoved = false;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        startX = clientX;
+        startY = clientY;
+
+        const rect = element.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+
+        element.style.right = "auto";
+        element.style.bottom = "auto";
+        element.style.left = `${initialLeft}px`;
+        element.style.top = `${initialTop}px`;
+
+        document.addEventListener("mousemove", onPointerMove);
+        document.addEventListener("mouseup", onPointerUp);
+        document.addEventListener("touchmove", onPointerMove, { passive: false });
+        document.addEventListener("touchend", onPointerUp);
+    }
+
+    function onPointerMove(e) {
+        if (!isDragging) return;
+
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+
+        const deltaX = clientX - startX;
+        const deltaY = clientY - startY;
+
+        if (Math.abs(deltaX) > 4 || Math.abs(deltaY) > 4) {
+            hasMoved = true;
+            if (e.cancelable) e.preventDefault();
+        }
+
+        const winWidth = window.innerWidth;
+        const winHeight = window.innerHeight;
+        const elemWidth = element.offsetWidth;
+        const elemHeight = element.offsetHeight;
+
+        let newLeft = initialLeft + deltaX;
+        let newTop = initialTop + deltaY;
+
+        newLeft = Math.max(8, Math.min(winWidth - elemWidth - 8, newLeft));
+        newTop = Math.max(8, Math.min(winHeight - elemHeight - 8, newTop));
+
+        element.style.left = `${newLeft}px`;
+        element.style.top = `${newTop}px`;
+    }
+
+    function onPointerUp() {
+        if (!isDragging) return;
+        isDragging = false;
+
+        document.removeEventListener("mousemove", onPointerMove);
+        document.removeEventListener("mouseup", onPointerUp);
+        document.removeEventListener("touchmove", onPointerMove);
+        document.removeEventListener("touchend", onPointerUp);
+    }
+
+    handle.addEventListener("mousedown", onPointerDown);
+    handle.addEventListener("touchstart", onPointerDown, { passive: true });
+
+    return {
+        hasMoved: () => hasMoved
+    };
+}
+
 function initAiCopilotUI() {
     if (document.getElementById("pranAiWidget")) return;
 
     const widget = document.createElement("div");
     widget.id = "pranAiWidget";
     widget.innerHTML = `
-        <button id="copilotToggleBtn" class="copilot-launch-btn" title="Open PRAN AI Medical Copilot">
+        <button id="copilotToggleBtn" class="copilot-launch-btn" title="Open PRAN AI Medical Copilot (Draggable)">
             <span class="copilot-pulse-dot"></span>
             <span class="copilot-btn-icon">⚡</span>
             <span class="copilot-btn-text">AI Copilot</span>
         </button>
 
         <div id="copilotDrawer" class="copilot-drawer hidden">
-            <div class="copilot-header">
-                <div class="copilot-header-info">
-                    <span class="copilot-badge">✚ GROQ AI COPILOT</span>
-                    <h3>PRAN Emergency Copilot</h3>
-                    <small id="copilotAiStatus">Connecting to AI Engine...</small>
+            <div class="copilot-header" title="Click and drag to reposition copilot">
+                <div class="copilot-header-info" style="display:flex;align-items:center;">
+                    <span class="copilot-drag-grip" title="Drag to reposition">⋮⋮</span>
+                    <div>
+                        <span class="copilot-badge">✚ GROQ AI COPILOT</span>
+                        <h3>PRAN Emergency Copilot</h3>
+                        <small id="copilotAiStatus">Connecting to AI Engine...</small>
+                    </div>
                 </div>
                 <button id="copilotCloseBtn" class="copilot-close-btn" aria-label="Close Copilot">✕</button>
             </div>
@@ -364,19 +449,49 @@ function initAiCopilotUI() {
 
     document.body.appendChild(widget);
 
-    document.getElementById("copilotToggleBtn")?.addEventListener("click", () => {
-        const drawer = document.getElementById("copilotDrawer");
-        drawer?.classList.toggle("hidden");
-        if (drawer && !drawer.classList.contains("hidden")) {
-            renderCopilotMessages();
-            updateCopilotStatusText();
-            document.getElementById("copilotInput")?.focus();
-        }
-    });
+    const drawer = document.getElementById("copilotDrawer");
+    const header = drawer?.querySelector(".copilot-header");
+    if (drawer && header) {
+        makeDraggable(drawer, header);
+    }
+
+    const toggleBtn = document.getElementById("copilotToggleBtn");
+    if (toggleBtn) {
+        const btnDrag = makeDraggable(toggleBtn, toggleBtn);
+        toggleBtn.addEventListener("click", (e) => {
+            if (btnDrag.hasMoved()) {
+                e.stopImmediatePropagation();
+                return;
+            }
+            drawer?.classList.toggle("hidden");
+            if (drawer && !drawer.classList.contains("hidden")) {
+                renderCopilotMessages();
+                updateCopilotStatusText();
+                document.getElementById("copilotInput")?.focus();
+            }
+        });
+    }
 
     document.getElementById("copilotCloseBtn")?.addEventListener("click", () => {
         document.getElementById("copilotDrawer")?.classList.add("hidden");
     });
+
+    document.getElementById("copilotForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("copilotInput");
+        const text = input ? input.value.trim() : "";
+        if (!text) return;
+        input.value = "";
+        sendCopilotQuery(text);
+    });
+
+    document.addEventListener("click", (e) => {
+        const chip = e.target.closest(".copilot-chip");
+        if (chip) sendCopilotQuery(chip.dataset.prompt);
+    });
+
+    checkAiStatus().then(updateCopilotStatusText);
+}
 
     document.getElementById("copilotForm")?.addEventListener("submit", (e) => {
         e.preventDefault();
