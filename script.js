@@ -253,7 +253,7 @@ async function checkAiStatus() {
             return aiStatusCache;
         }
     } catch(e) {}
-    return { configured: true, model: "llama-3.3-70b-versatile" };
+    return { configured: true, model: "llama-3.1-8b-instant" };
 }
 
 async function requestAiTriage(patientData) {
@@ -503,9 +503,9 @@ function updateCopilotStatusText() {
     const el = document.getElementById("copilotAiStatus");
     if (!el) return;
     if (aiStatusCache && aiStatusCache.configured) {
-        el.innerHTML = '<span style="color:#10b981; font-weight:bold;">●</span> Active: ' + (aiStatusCache.model || "llama-3.3-70b-versatile");
+        el.innerHTML = '<span style="color:#10b981; font-weight:bold;">●</span> Active: ' + (aiStatusCache.model || "llama-3.1-8b-instant");
     } else {
-        el.innerHTML = '<span style="color:#10b981; font-weight:bold;">●</span> Online: Groq LLaMA 3.3';
+        el.innerHTML = '<span style="color:#10b981; font-weight:bold;">●</span> Online: Groq LLaMA 3.1';
     }
 }
 

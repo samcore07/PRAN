@@ -26,18 +26,19 @@ function getGroqKey(customKey) {
 }
 
 function getGroqModel() {
-  let raw = (process.env.GROQ_MODEL || 'llama-3.3-70b-versatile').trim();
+  let raw = (process.env.GROQ_MODEL || 'llama-3.1-8b-instant').trim();
   raw = raw.replace(/^["']|["']$/g, '').trim();
 
-  // Auto-upgrade any deprecated or legacy model names to active Groq production models
+  // Map requested or legacy models to active models with universal tier availability
   const aliasMap = {
-    'llama-3.1-70b-versatile': 'llama-3.3-70b-versatile',
-    'llama3-70b-8192': 'llama-3.3-70b-versatile',
+    'llama-3.1-70b-versatile': 'llama-3.1-8b-instant',
+    'llama-3.3-70b-versatile': 'llama-3.1-8b-instant', // Auto-fallback: 8b-instant has 100% universal access on all Groq tiers
+    'llama3-70b-8192': 'llama-3.1-8b-instant',
     'llama3-8b-8192': 'llama-3.1-8b-instant',
-    'llama-3-70b': 'llama-3.3-70b-versatile',
+    'llama-3-70b': 'llama-3.1-8b-instant',
     'llama-3-8b': 'llama-3.1-8b-instant'
   };
-  return aliasMap[raw] || raw || 'llama-3.3-70b-versatile';
+  return aliasMap[raw] || raw || 'llama-3.1-8b-instant';
 }
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
@@ -63,7 +64,7 @@ function getAiStatus(customKey) {
 }
 
 /**
- * Perform an HTTP POST request to Groq API using native fetch (or https.request fallback)
+ * Perform an HTTP POST request to Groq API with automatic model fallback
  */
 async function callGroqApi(messages, options = {}) {
   const key = getGroqKey(options.apiKey);
@@ -71,77 +72,103 @@ async function callGroqApi(messages, options = {}) {
     throw new Error('GROQ_API_KEY is not configured in Vercel environment variables');
   }
 
-  const activeModel = options.model || getGroqModel();
-  const payload = {
-    model: activeModel,
-    messages,
-    temperature: options.temperature ?? 0.2,
-    max_tokens: options.max_tokens ?? 1024
-  };
-  if (options.json) {
-    payload.response_format = { type: 'json_object' };
-  }
+  const primaryModel = options.model || getGroqModel();
+  // Candidate models: primary first, followed by universal 8B and Gemma fallbacks
+  const modelCandidates = [
+    primaryModel,
+    'llama-3.1-8b-instant',
+    'gemma2-9b-it'
+  ].filter((m, idx, self) => Boolean(m) && self.indexOf(m) === idx);
 
-  // Modern Node 18+ and Vercel serverless native fetch
-  if (typeof fetch === 'function') {
-    const res = await fetch(GROQ_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`
-      },
-      body: JSON.stringify(payload)
-    });
+  let lastError = null;
 
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Groq API returned HTTP ${res.status}: ${errText}`);
+  for (const model of modelCandidates) {
+    const payload = {
+      model,
+      messages,
+      temperature: options.temperature ?? 0.2,
+      max_tokens: options.max_tokens ?? 1024
+    };
+    if (options.json) {
+      payload.response_format = { type: 'json_object' };
     }
 
-    const json = await res.json();
-    return json.choices?.[0]?.message?.content || '';
+    try {
+      if (typeof fetch === 'function') {
+        const res = await fetch(GROQ_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        if (res.ok) {
+          const json = await res.json();
+          return json.choices?.[0]?.message?.content || '';
+        }
+
+        const errText = await res.text();
+        // If 404 / model_not_found / does not exist / decommissioned, cascade to next candidate
+        if (res.status === 404 || errText.includes('model_not_found') || errText.includes('does not exist') || errText.includes('decommissioned')) {
+          console.warn(`Groq model ${model} not available (${res.status}), trying next candidate...`);
+          lastError = new Error(`Groq API returned HTTP ${res.status}: ${errText}`);
+          continue;
+        }
+
+        throw new Error(`Groq API returned HTTP ${res.status}: ${errText}`);
+      }
+
+      // Fallback to https.request
+      const result = await new Promise((resolve, reject) => {
+        const payloadStr = JSON.stringify(payload);
+        const url = new URL(GROQ_ENDPOINT);
+        const req = https.request({
+          hostname: url.hostname,
+          port: 443,
+          path: url.pathname,
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${key}`,
+            'Content-Length': Buffer.byteLength(payloadStr)
+          },
+          timeout: 15000
+        }, (res) => {
+          let data = '';
+          res.on('data', chunk => { data += chunk; });
+          res.on('end', () => {
+            if (res.statusCode >= 200 && res.statusCode < 300) {
+              try {
+                const parsed = JSON.parse(data);
+                resolve(parsed.choices?.[0]?.message?.content || '');
+              } catch(e) {
+                reject(new Error('Failed to parse Groq response: ' + e.message));
+              }
+            } else {
+              reject(new Error(`Groq API returned HTTP ${res.statusCode}: ${data}`));
+            }
+          });
+        });
+
+        req.on('error', reject);
+        req.on('timeout', () => { req.destroy(); reject(new Error('Groq API request timed out')); });
+        req.write(payloadStr);
+        req.end();
+      });
+
+      return result;
+    } catch (err) {
+      lastError = err;
+      if (err.message && (err.message.includes('model_not_found') || err.message.includes('404') || err.message.includes('does not exist') || err.message.includes('decommissioned'))) {
+        continue;
+      }
+      throw err;
+    }
   }
 
-  // Fallback to https.request
-  return new Promise((resolve, reject) => {
-    const payloadStr = JSON.stringify(payload);
-    const url = new URL(GROQ_ENDPOINT);
-    const req = https.request({
-      hostname: url.hostname,
-      port: 443,
-      path: url.pathname,
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${key}`,
-        'Content-Length': Buffer.byteLength(payloadStr)
-      },
-      timeout: 15000
-    }, (res) => {
-      let data = '';
-      res.on('data', chunk => { data += chunk; });
-      res.on('end', () => {
-        if (res.statusCode >= 200 && res.statusCode < 300) {
-          try {
-            const parsed = JSON.parse(data);
-            resolve(parsed.choices?.[0]?.message?.content || '');
-          } catch(e) {
-            reject(new Error('Failed to parse Groq response: ' + e.message));
-          }
-        } else {
-          reject(new Error(`Groq API returned HTTP ${res.statusCode}: ${data}`));
-        }
-      });
-    });
-
-    req.on('error', reject);
-    req.on('timeout', () => {
-      req.destroy();
-      reject(new Error('Groq API request timed out'));
-    });
-    req.write(payloadStr);
-    req.end();
-  });
+  throw lastError || new Error('All Groq model candidates failed');
 }
 
 /**
@@ -372,6 +399,7 @@ Hospital features: ${hospital.icu} ICU beds, ${hospital.general} General beds, e
 }
 
 module.exports = {
+  getGroqModel,
   isAiConfigured,
   getAiStatus,
   analyzeEmergencyTriage,
