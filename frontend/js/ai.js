@@ -27,7 +27,7 @@ async function checkAiStatus() {
     } catch (e) {
         // Backend might be starting or offline
     }
-    return { configured: true, model: "llama-3.1-8b-instant", provider: "Groq" };
+    return { configured: true, model: "openai/gpt-oss-20b", provider: "Groq" };
 }
 
 /**

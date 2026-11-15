@@ -26,19 +26,22 @@ function getGroqKey(customKey) {
 }
 
 function getGroqModel() {
-  let raw = (process.env.GROQ_MODEL || 'llama-3.1-8b-instant').trim();
+  let raw = (process.env.GROQ_MODEL || 'openai/gpt-oss-20b').trim();
   raw = raw.replace(/^["']|["']$/g, '').trim();
 
-  // Map requested or legacy models to active models with universal tier availability
+  // Map legacy, decommissioned, or requested models to Groq's active production models
   const aliasMap = {
-    'llama-3.1-70b-versatile': 'llama-3.1-8b-instant',
-    'llama-3.3-70b-versatile': 'llama-3.1-8b-instant', // Auto-fallback: 8b-instant has 100% universal access on all Groq tiers
-    'llama3-70b-8192': 'llama-3.1-8b-instant',
-    'llama3-8b-8192': 'llama-3.1-8b-instant',
-    'llama-3-70b': 'llama-3.1-8b-instant',
-    'llama-3-8b': 'llama-3.1-8b-instant'
+    'llama-3.1-70b-versatile': 'openai/gpt-oss-20b',
+    'llama-3.3-70b-versatile': 'openai/gpt-oss-20b',
+    'llama-3.1-8b-instant': 'openai/gpt-oss-20b',
+    'llama3-70b-8192': 'openai/gpt-oss-20b',
+    'llama3-8b-8192': 'openai/gpt-oss-20b',
+    'llama-3-70b': 'openai/gpt-oss-20b',
+    'llama-3-8b': 'openai/gpt-oss-20b',
+    'gpt-oss-20b': 'openai/gpt-oss-20b',
+    'gpt-oss-120b': 'openai/gpt-oss-120b'
   };
-  return aliasMap[raw] || raw || 'llama-3.1-8b-instant';
+  return aliasMap[raw] || raw || 'openai/gpt-oss-20b';
 }
 
 const GROQ_ENDPOINT = 'https://api.groq.com/openai/v1/chat/completions';
@@ -73,11 +76,12 @@ async function callGroqApi(messages, options = {}) {
   }
 
   const primaryModel = options.model || getGroqModel();
-  // Candidate models: primary first, followed by universal 8B and Gemma fallbacks
+  // Candidate models: primary first, followed by verified active models on Groq
   const modelCandidates = [
     primaryModel,
-    'llama-3.1-8b-instant',
-    'gemma2-9b-it'
+    'openai/gpt-oss-20b',
+    'openai/gpt-oss-120b',
+    'qwen/qwen3.8-27b'
   ].filter((m, idx, self) => Boolean(m) && self.indexOf(m) === idx);
 
   let lastError = null;
