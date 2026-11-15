@@ -678,7 +678,10 @@ document.getElementById("loginForm").addEventListener("submit",event => {
         guest:false
     };
 
-    showScreen("roleScreen");
+    showLocationModal(() => {
+        showScreen("roleScreen");
+        updateHeaderLocationPills();
+    });
 });
 
 document.getElementById("guestLogin").addEventListener("click",() => {
@@ -688,7 +691,10 @@ document.getElementById("guestLogin").addEventListener("click",() => {
         guest:true
     };
 
-    showScreen("roleScreen");
+    showLocationModal(() => {
+        showScreen("roleScreen");
+        updateHeaderLocationPills();
+    });
 });
 
 document.getElementById("logoutFromRole").addEventListener("click",() => {
@@ -725,6 +731,7 @@ function startWorkspace() {
     document.getElementById("topUser").textContent = displayName.charAt(0).toUpperCase();
 
     buildNavigation();
+    updateHeaderLocationPills();
     openPage("overview");
 }
 
@@ -781,6 +788,24 @@ document.getElementById("logoutButton").addEventListener("click",() => {
     currentRole = null;
     document.getElementById("loginForm").reset();
     showScreen("loginScreen");
+});
+
+document.getElementById("btnRoleLocation")?.addEventListener("click", () => {
+    showLocationModal(updateHeaderLocationPills);
+});
+
+document.getElementById("btnTopbarLocation")?.addEventListener("click", () => {
+    showLocationModal(updateHeaderLocationPills);
+});
+
+document.addEventListener("click", (e) => {
+    if (e.target.id === "btnChangeFormLocation" || e.target.closest("#btnChangeFormLocation")) {
+        showLocationModal(() => {
+            updateHeaderLocationPills();
+            const locInput = document.getElementById("patientLocation");
+            if (locInput) locInput.value = currentUserCoords.address || "Salt Lake Sector V, Kolkata";
+        });
+    }
 });
 
 /* ============================================
@@ -1099,8 +1124,10 @@ function requestPage() {
                             <option value="General">General Ward</option>
                         </select>
                     </label>
-                    <label class="field">Current location *
-                        <input id="patientLocation" required placeholder="e.g. Salt Lake Sector V, Kolkata">
+                    <label class="field">
+                        <span>Current location *</span>
+                        <small style="float: right; color: var(--blue); cursor: pointer; font-weight: 700;" id="btnChangeFormLocation">📍 Recalibrate GPS</small>
+                        <input id="patientLocation" required value="${safe(currentUserCoords.address || 'Salt Lake Sector V, Kolkata')}" placeholder="e.g. Salt Lake Sector V, Kolkata">
                     </label>
 
                     <label class="field full">Symptoms & Chief Complaint *
@@ -1354,7 +1381,7 @@ function hospitalReservations() {
 ============================================ */
 
 let navLeafletMap = null;
-let currentUserCoords = { lat: 22.5802, lng: 88.4326 };
+let currentUserCoords = { lat: 22.5802, lng: 88.4326, address: "Salt Lake Sector V, Kolkata" };
 let navMapMode = "leaflet";
 
 const HOSPITAL_COORDINATES = {
@@ -1391,6 +1418,183 @@ function calculateNavDistance(c1, c2) {
               Math.sin(dLng / 2) * Math.sin(dLng / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return Math.round(R * c * 10) / 10;
+}
+
+function recalculateAllDistances() {
+    if (!currentUserCoords || typeof currentUserCoords.lat !== "number") return;
+    data.hospitals.forEach(h => {
+        const coords = getHospitalCoords(h);
+        const distKm = calculateNavDistance(currentUserCoords, coords);
+        h.distance = distKm;
+    });
+    saveData();
+    renderPage();
+}
+
+function updateHeaderLocationPills() {
+    const label = currentUserCoords.address ? currentUserCoords.address.split("(")[0].trim().split(",")[0].trim() : "Sector V";
+    document.querySelectorAll(".header-loc-label").forEach(el => {
+        el.textContent = label;
+    });
+}
+
+function showLocationModal(onComplete) {
+    if (document.getElementById("locationSetupModal")) return;
+
+    let selectedCoords = { ...currentUserCoords };
+
+    const modal = document.createElement("div");
+    modal.id = "locationSetupModal";
+    modal.className = "location-setup-overlay";
+    modal.innerHTML = `
+        <div class="location-setup-card">
+            <div class="loc-radar-icon">
+                <span class="loc-ping"></span>
+                <span class="loc-pin">📍</span>
+            </div>
+
+            <h2>Emergency Location Setup</h2>
+            <p class="loc-subtitle">
+                Calibrate your patient or ambulance location to calculate turn-by-turn navigation, accurate hospital proximity, and real-time transit ETAs.
+            </p>
+
+            <div class="loc-gps-box" id="locStatusBox">
+                <div class="loc-current-preview">
+                    <small>SELECTED EMERGENCY ORIGIN</small>
+                    <strong id="locPreviewText">${safe(selectedCoords.address || "Salt Lake Sector V, Kolkata")}</strong>
+                    <span id="locCoordsText" class="loc-coords-badge">GPS: ${Number(selectedCoords.lat).toFixed(4)}° N, ${Number(selectedCoords.lng).toFixed(4)}° E</span>
+                </div>
+            </div>
+
+            <div class="loc-actions">
+                <button type="button" class="btn btn-primary btn-wide" id="btnAutoDetectGps">
+                    <span class="btn-radar-dot"></span>
+                    <span>📍 Auto-Detect Live GPS Location</span>
+                </button>
+                <div id="locGpsNotice" class="loc-notice hidden"></div>
+            </div>
+
+            <div class="loc-divider"><span>OR SELECT EMERGENCY SECTOR</span></div>
+
+            <div class="loc-quick-grid">
+                <button type="button" class="loc-chip active" data-lat="22.5802" data-lng="88.4326" data-addr="Salt Lake Sector V (College More), Kolkata">
+                    🏙️ Sector V (College More)
+                </button>
+                <button type="button" class="loc-chip" data-lat="22.5867" data-lng="88.4178" data-addr="Salt Lake Sector III (Karunamoyee), Kolkata">
+                    🏢 Sector III (Karunamoyee)
+                </button>
+                <button type="button" class="loc-chip" data-lat="22.5889" data-lng="88.4632" data-addr="New Town Action Area I, Kolkata">
+                    🏬 New Town (Action Area I)
+                </button>
+                <button type="button" class="loc-chip" data-lat="22.5590" data-lng="88.4020" data-addr="EM Bypass (Chingrighata), Kolkata">
+                    🛣️ EM Bypass (Chingrighata)
+                </button>
+                <button type="button" class="loc-chip" data-lat="22.5925" data-lng="88.4098" data-addr="Salt Lake Sector I (City Centre), Kolkata">
+                    🛍️ Sector I (City Centre)
+                </button>
+                <button type="button" class="loc-chip" data-lat="22.6247" data-lng="88.4208" data-addr="Dum Dum / Airport Corridor, Kolkata">
+                    ✈️ Dum Dum / Airport
+                </button>
+            </div>
+
+            <div class="loc-footer-buttons">
+                <button type="button" class="btn btn-success btn-wide" id="btnConfirmLocation">
+                    Confirm & Proceed ➔
+                </button>
+                <button type="button" class="text-button" id="btnSkipLocation">
+                    Use default location (Sector V) →
+                </button>
+            </div>
+        </div>
+    `;
+
+    document.body.appendChild(modal);
+
+    const btnGps = modal.querySelector("#btnAutoDetectGps");
+    const notice = modal.querySelector("#locGpsNotice");
+    const statusBox = modal.querySelector("#locStatusBox");
+    const previewText = modal.querySelector("#locPreviewText");
+    const coordsText = modal.querySelector("#locCoordsText");
+    const chips = modal.querySelectorAll(".loc-chip");
+    const btnConfirm = modal.querySelector("#btnConfirmLocation");
+    const btnSkip = modal.querySelector("#btnSkipLocation");
+
+    chips.forEach(chip => {
+        chip.addEventListener("click", () => {
+            chips.forEach(c => c.classList.remove("active"));
+            chip.classList.add("active");
+            const lat = Number(chip.dataset.lat);
+            const lng = Number(chip.dataset.lng);
+            const addr = chip.dataset.addr;
+            selectedCoords = { lat, lng, address: addr };
+            previewText.textContent = addr;
+            coordsText.textContent = `GPS: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E`;
+            statusBox.classList.remove("loc-calibrated");
+            notice.classList.add("hidden");
+        });
+    });
+
+    btnGps.addEventListener("click", () => {
+        if (!navigator.geolocation) {
+            notice.textContent = "Geolocation is not supported by your browser.";
+            notice.className = "loc-notice notice-warning";
+            notice.classList.remove("hidden");
+            return;
+        }
+
+        btnGps.disabled = true;
+        btnGps.innerHTML = `<span>⏳ Calibrating GPS Satellite Signal...</span>`;
+
+        navigator.geolocation.getCurrentPosition(
+            (pos) => {
+                const lat = pos.coords.latitude;
+                const lng = pos.coords.longitude;
+                const accuracy = Math.round(pos.coords.accuracy);
+                selectedCoords = { lat, lng, address: "Live GPS Position (Calibrated)" };
+
+                previewText.textContent = "Live GPS Device Position";
+                coordsText.textContent = `GPS: ${lat.toFixed(4)}° N, ${lng.toFixed(4)}° E (±${accuracy}m)`;
+                statusBox.classList.add("loc-calibrated");
+
+                chips.forEach(c => c.classList.remove("active"));
+
+                notice.textContent = `✓ Exact GPS coordinates calibrated within ${accuracy} meters.`;
+                notice.className = "loc-notice notice-success";
+                notice.classList.remove("hidden");
+
+                btnGps.disabled = false;
+                btnGps.innerHTML = `<span>✓ GPS Calibrated Successfully</span>`;
+
+                setTimeout(() => {
+                    closeAndProceed();
+                }, 700);
+            },
+            (err) => {
+                btnGps.disabled = false;
+                btnGps.innerHTML = `<span>📍 Retry GPS Detection</span>`;
+                notice.textContent = "Notice: Browser GPS access was not allowed or timed out. Please choose an area from the quick presets below.";
+                notice.className = "loc-notice notice-warning";
+                notice.classList.remove("hidden");
+            },
+            { enableHighAccuracy: true, timeout: 8000, maximumAge: 10000 }
+        );
+    });
+
+    function closeAndProceed() {
+        currentUserCoords = { ...selectedCoords };
+        recalculateAllDistances();
+        updateHeaderLocationPills();
+        modal.remove();
+        toast(`Location set: ${currentUserCoords.address || "Sector V, Kolkata"}`);
+        if (typeof onComplete === "function") onComplete();
+    }
+
+    btnConfirm.addEventListener("click", closeAndProceed);
+    btnSkip.addEventListener("click", () => {
+        modal.remove();
+        updateHeaderLocationPills();
+        if (typeof onComplete === "function") onComplete();
+    });
 }
 
 function navigationPage() {

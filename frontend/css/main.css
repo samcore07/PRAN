@@ -902,3 +902,253 @@ p {
     color: #93c5fd;
 }
 
+/* ============================================
+   EMERGENCY LOCATION SETUP MODAL
+============================================ */
+.location-setup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(13, 17, 23, 0.72);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    z-index: 3000;
+    display: grid;
+    place-items: center;
+    padding: 16px;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.location-setup-card {
+    background: var(--white);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.25);
+    max-width: 520px;
+    width: 100%;
+    padding: 28px 24px 22px;
+    text-align: center;
+    position: relative;
+    animation: slideUpFade 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="dark"] .location-setup-card {
+    background: #161b22;
+    border-color: #30363d;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.7);
+}
+
+.loc-radar-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: rgba(23, 103, 165, 0.1);
+    color: var(--blue);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    position: relative;
+    margin: 0 auto 14px;
+}
+
+.loc-radar-icon .loc-ping {
+    position: absolute;
+    inset: -6px;
+    border-radius: 50%;
+    border: 2px solid rgba(23, 103, 165, 0.4);
+    animation: pingRadar 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes pingRadar {
+    0% { transform: scale(0.9); opacity: 1; }
+    75%, 100% { transform: scale(1.4); opacity: 0; }
+}
+
+.location-setup-card h2 {
+    font-size: 20px;
+    color: var(--navy);
+    margin: 0 0 6px;
+    font-weight: 800;
+}
+
+.loc-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin: 0 auto 18px;
+    max-width: 440px;
+}
+
+.loc-gps-box {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 16px;
+    text-align: left;
+    transition: all 0.25s ease;
+}
+
+[data-theme="dark"] .loc-gps-box {
+    background: #21262d;
+    border-color: #30363d;
+}
+
+.loc-gps-box.loc-calibrated {
+    background: rgba(36, 150, 110, 0.08);
+    border-color: #24966e;
+}
+
+.loc-current-preview small {
+    display: block;
+    font-size: 9px;
+    font-weight: 800;
+    color: var(--muted);
+    letter-spacing: 0.8px;
+    margin-bottom: 3px;
+}
+
+.loc-current-preview strong {
+    display: block;
+    font-size: 14px;
+    color: var(--navy);
+    font-weight: 700;
+}
+
+.loc-coords-badge {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    font-family: ui-monospace, monospace;
+    color: var(--blue);
+    background: rgba(23, 103, 165, 0.08);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.loc-actions {
+    margin-bottom: 16px;
+}
+
+.btn-radar-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #ffffff;
+    margin-right: 6px;
+    animation: pulseDot 1.5s infinite;
+}
+
+.loc-notice {
+    font-size: 11px;
+    margin-top: 8px;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.loc-notice.notice-warning {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.loc-notice.notice-success {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.loc-divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    margin: 14px 0 12px;
+}
+
+.loc-divider::before,
+.loc-divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--border);
+}
+
+.loc-divider span {
+    padding: 0 10px;
+}
+
+.loc-quick-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 18px;
+}
+
+.loc-chip {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 9px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+[data-theme="dark"] .loc-chip {
+    background: #21262d;
+    border-color: #30363d;
+    color: #c9d1d9;
+}
+
+.loc-chip:hover {
+    border-color: var(--blue);
+    background: rgba(23, 103, 165, 0.06);
+}
+
+.loc-chip.active {
+    border-color: var(--blue);
+    background: rgba(23, 103, 165, 0.12);
+    color: var(--blue);
+    font-weight: 700;
+}
+
+.loc-footer-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.header-location-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(23, 103, 165, 0.08);
+    border: 1px solid rgba(23, 103, 165, 0.2);
+    color: var(--blue);
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.header-location-pill:hover {
+    background: rgba(23, 103, 165, 0.16);
+    border-color: var(--blue);
+}
+
+[data-theme="dark"] .header-location-pill {
+    background: rgba(56, 139, 253, 0.12);
+    border-color: rgba(56, 139, 253, 0.3);
+    color: #58a6ff;
+}
+
