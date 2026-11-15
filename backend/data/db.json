@@ -415,7 +415,7 @@
       "location": "Salt Lake Sector II, Kolkata",
       "notes": "Severe chest tightness, history of hypertension",
       "status": "Pending",
-      "hospitalId": null,
+      "hospitalId": 1,
       "owner": "ananya@example.com",
       "createdAt": "2026-11-15T14:15:42.760428+00:00"
     }

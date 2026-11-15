@@ -62,6 +62,47 @@ function setCorsHeaders(res) {
     res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
 }
 
+const MIME_TYPES = {
+    ".html": "text/html; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".js": "application/javascript; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".jpeg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
+    ".woff2": "font/woff2"
+};
+
+function serveStatic(pathname, res) {
+    const rootDir = path.resolve(__dirname, "..");
+    let cleanPath = pathname === "/" || pathname === "" ? "/index.html" : pathname;
+    const safePath = path.normalize(cleanPath).replace(/^(\.\.[\/\\])+/, "");
+    let filePath = path.join(rootDir, safePath);
+
+    if (!fs.existsSync(filePath) || (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory())) {
+        const frontendPath = path.join(rootDir, "frontend", safePath);
+        if (fs.existsSync(frontendPath) && !fs.statSync(frontendPath).isDirectory()) {
+            filePath = frontendPath;
+        }
+    }
+
+    if (fs.existsSync(filePath) && !fs.statSync(filePath).isDirectory()) {
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType = MIME_TYPES[ext] || "application/octet-stream";
+        const content = fs.readFileSync(filePath);
+        res.writeHead(200, {
+            "Content-Type": contentType,
+            "Content-Length": content.length
+        });
+        res.end(content);
+        return true;
+    }
+    return false;
+}
+
 const server = http.createServer((req, res) => {
     setCorsHeaders(res);
 
@@ -89,8 +130,14 @@ const server = http.createServer((req, res) => {
             }
         }
 
+        // Serve static frontend assets for non-API routes
+        if (!pathname.startsWith("/api")) {
+            const served = serveStatic(pathname, res);
+            if (served) return;
+        }
+
         // Base health & info routes
-        if (pathname === "/" || pathname === "/api/health") {
+        if (pathname === "/api" || pathname === "/api/health") {
             res.writeHead(200, { "Content-Type": "application/json" });
             res.end(JSON.stringify({
                 status: "healthy",

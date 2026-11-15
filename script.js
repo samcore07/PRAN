@@ -493,23 +493,6 @@ function initAiCopilotUI() {
     checkAiStatus().then(updateCopilotStatusText);
 }
 
-    document.getElementById("copilotForm")?.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const input = document.getElementById("copilotInput");
-        const text = input ? input.value.trim() : "";
-        if (!text) return;
-        input.value = "";
-        sendCopilotQuery(text);
-    });
-
-    document.addEventListener("click", (e) => {
-        const chip = e.target.closest(".copilot-chip");
-        if (chip) sendCopilotQuery(chip.dataset.prompt);
-    });
-
-    checkAiStatus().then(updateCopilotStatusText);
-}
-
 function updateCopilotStatusText() {
     const el = document.getElementById("copilotAiStatus");
     if (!el) return;

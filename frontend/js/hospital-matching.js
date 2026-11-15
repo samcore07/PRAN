@@ -89,10 +89,6 @@ function matchesPage() {
                 </div>
             </div>
             ${request.notes ? `<p style="margin: 6px 0 0 0; font-size: 11px; color: var(--muted); font-style: italic;">Notes: "${safe(request.notes)}"</p>` : ''}
-        </div>
-                    </span>
-                ` : ""}
-            </div>
             ${triage && triage.clinicalSummary ? `
                 <p style="margin-top: 8px; font-size: 11px; color: var(--navy); background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 6px;">
                     ⚡ <strong>AI Triage Assessment:</strong> ${safe(triage.clinicalSummary)}
