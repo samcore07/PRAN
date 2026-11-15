@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRAN | Emergency Hospital Coordination</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- GLOBAL BASE & COMPONENT CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/login.css">
+    <link rel="stylesheet" href="css/role-selection.css">
+    <link rel="stylesheet" href="css/app-shell.css">
+    <link rel="stylesheet" href="css/overview.css">
+    <link rel="stylesheet" href="css/emergency-request.css">
+    <link rel="stylesheet" href="css/bed-availability.css">
+    <link rel="stylesheet" href="css/hospital-matching.css">
+    <link rel="stylesheet" href="css/reservations.css">
+    <link rel="stylesheet" href="css/navigation.css">
+    <link rel="stylesheet" href="css/bed-management.css">
+</head>
+<body>
+
+<!-- LOGIN COMPONENT SCREEN -->
+<section id="loginScreen" class="screen auth-screen">
+    <div class="auth-decoration"></div>
+
+    <div class="auth-card">
+        <a class="brand auth-brand" href="#">
+            <span class="brand-symbol">✚</span>
+            <span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span>
+        </a>
+
+        <div class="auth-intro">
+            <span class="eyebrow">WELCOME TO PRAN</span>
+            <h1>Every second<br><span>matters.</span></h1>
+            <p>Connecting patients, ambulances and hospitals for faster emergency coordination.</p>
+        </div>
+
+        <form id="loginForm">
+            <label class="field">
+                Email address
+                <input type="email" id="emailInput" placeholder="you@example.com" required>
+            </label>
+            <label class="field">
+                Password
+                <input type="password" id="passwordInput" placeholder="Enter any demo password" minlength="4" required>
+            </label>
+            <p class="form-error" id="loginError"></p>
+            <button class="btn btn-primary btn-wide" type="submit">Continue with email <span>→</span></button>
+        </form>
+
+        <div class="auth-divider"><span>OR</span></div>
+        <button class="btn btn-guest btn-wide" id="guestLogin">Continue as guest</button>
+        <p class="auth-foot">Demo access · No real account is created</p>
+    </div>
+
+    <div class="auth-side">
+        <div class="auth-side-content">
+            <span class="side-kicker">ONE CONNECTED NETWORK</span>
+            <h2>Better coordination.<br>Faster access to care.</h2>
+            <p>PRAN brings emergency information together in one coordinated platform.</p>
+            <div class="auth-feature">
+                <span>✚</span><div><strong>Emergency requests</strong><small>Organised patient information</small></div>
+            </div>
+            <div class="auth-feature">
+                <span>▦</span><div><strong>Hospital availability</strong><small>Sample bed and facility information</small></div>
+            </div>
+            <div class="auth-feature">
+                <span>⌖</span><div><strong>Connected coordination</strong><small>Role-based access to relevant tools</small></div>
+            </div>
+        </div>
+        <div class="side-bottom">PRAN · Emergency Hospital Coordination System</div>
+    </div>
+</section>
+
+<!-- ROLE SELECTION COMPONENT SCREEN -->
+<section id="roleScreen" class="screen role-screen hidden">
+    <header class="role-header">
+        <a class="brand" href="#"><span class="brand-symbol">✚</span><span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span></a>
+        <button class="text-button" id="logoutFromRole">← Sign out</button>
+    </header>
+
+    <div class="role-content">
+        <span class="eyebrow">PERSONALISED WORKSPACE</span>
+        <h1>How will you use <span>PRAN?</span></h1>
+        <p>Select your role to access the relevant dashboard and tools.</p>
+
+        <div class="role-grid">
+            <button class="role-card" data-role="patient">
+                <span class="role-icon patient-icon">♡</span>
+                <strong>Patient / Attendant</strong>
+                <small>Submit emergency requests, explore hospitals and track reservations.</small>
+                <span class="role-link">Continue as patient →</span>
+            </button>
+
+            <button class="role-card" data-role="ambulance">
+                <span class="role-icon ambulance-icon">＋</span>
+                <strong>Ambulance Operator</strong>
+                <small>View emergency requests, coordinate hospital selection and access maps.</small>
+                <span class="role-link">Continue as operator →</span>
+            </button>
+
+            <button class="role-card" data-role="hospital">
+                <span class="role-icon hospital-icon">⌂</span>
+                <strong>Hospital</strong>
+                <small>Manage hospital capacity and review incoming admission requests.</small>
+                <span class="role-link">Continue as hospital →</span>
+            </button>
+
+            <button class="role-card" data-role="admin">
+                <span class="role-icon admin-icon">▣</span>
+                <strong>System Administrator</strong>
+                <small>Monitor the hospital network, requests and platform activity.</small>
+                <span class="role-link">Continue as admin →</span>
+            </button>
+        </div>
+        <p class="role-note">This is a demonstration role selector. Production access requires verified accounts and server-side permissions.</p>
+    </div>
+</section>
+
+<!-- APPLICATION SHELL COMPONENT SCREEN -->
+<section id="appScreen" class="screen hidden">
+    <aside class="sidebar" id="sidebar">
+        <a class="brand sidebar-brand" href="#">
+            <span class="brand-symbol">✚</span>
+            <span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span>
+        </a>
+
+        <div class="workspace-label">YOUR WORKSPACE</div>
+        <div class="user-mini">
+            <div class="user-avatar" id="userAvatar">U</div>
+            <div><strong id="sidebarUser">Guest User</strong><small id="sidebarRole">Patient</small></div>
+        </div>
+
+        <nav id="sidebarNav"></nav>
+
+        <div class="sidebar-bottom">
+            <div class="demo-indicator"><span></span> Demo environment</div>
+            <button class="logout-button" id="switchRole">⇄ Switch role</button>
+            <button class="logout-button" id="logoutButton">↪ Sign out</button>
+        </div>
+    </aside>
+
+    <main class="main-area">
+        <header class="topbar">
+            <button class="menu-toggle" id="menuToggle" aria-label="Open menu">☰</button>
+            <div class="breadcrumb">PRAN <span>/</span> <strong id="pageTitle">Overview</strong></div>
+            <div class="topbar-right">
+                <span class="demo-pill"><span></span> DEMO MODE</span>
+                <div class="top-user" id="topUser">G</div>
+            </div>
+        </header>
+
+        <div class="content-area">
+            <div id="pageContent"></div>
+            <footer class="footer">
+                <span>© 2026 PRAN · Emergency Hospital Coordination System</span>
+                <span>Prototype · Simulated information</span>
+            </footer>
+        </div>
+    </main>
+</section>
+
+<div id="toast" class="toast" role="status"></div>
+
+<!-- SUPABASE CLIENT SDK & INTEGRATION -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/supabase.js"></script>
+
+<!-- COMPONENT JAVASCRIPT SCRIPTS -->
+<script src="js/main.js"></script>
+<script src="js/app-shell.js"></script>
+<script src="js/login.js"></script>
+<script src="js/role-selection.js"></script>
+<script src="js/overview.js"></script>
+<script src="js/emergency-request.js"></script>
+<script src="js/bed-availability.js"></script>
+<script src="js/hospital-matching.js"></script>
+<script src="js/reservations.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/bed-management.js"></script>
+</body>
+</html>

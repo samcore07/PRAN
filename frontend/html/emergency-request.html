@@ -1,0 +1,52 @@
+<!-- EMERGENCY REQUEST INTAKE COMPONENT -->
+<template id="emergency-request-template">
+    <div class="page-heading">
+        <span class="eyebrow">PATIENT INTAKE</span>
+        <h1>Create an <span>emergency request.</span></h1>
+        <p>Enter the patient's details and required support.</p>
+    </div>
+    <div class="panel">
+        <h2>Patient information</h2>
+        <p class="panel-subtitle">Fields marked with * are required.</p>
+        <form id="patientRequestForm">
+            <div class="form-grid">
+                <label class="field">Patient full name *
+                    <input id="patientName" required maxlength="70" placeholder="Patient's name">
+                </label>
+                <label class="field">Age *
+                    <input id="patientAge" type="number" min="0" max="120" required placeholder="Age">
+                </label>
+                <label class="field">Contact number *
+                    <input id="patientContact" type="tel" maxlength="10" required placeholder="10-digit mobile number">
+                </label>
+                <label class="field">Emergency category *
+                    <select id="patientCategory" required>
+                        <option value="">Select category</option>
+                        <option>Accident</option>
+                        <option>Cardiac</option>
+                        <option>Neurological</option>
+                        <option>General</option>
+                    </select>
+                </label>
+                <label class="field">Required bed type *
+                    <select id="patientFacility" required>
+                        <option value="">Select bed type</option>
+                        <option>General</option>
+                        <option>ICU</option>
+                    </select>
+                </label>
+                <label class="field">Current location *
+                    <input id="patientLocation" required placeholder="e.g. Salt Lake, Kolkata">
+                </label>
+                <label class="field full">Additional information
+                    <textarea id="patientNotes" rows="3" placeholder="Optional information"></textarea>
+                </label>
+            </div>
+            <p id="requestError" class="form-error"></p>
+            <div class="form-actions">
+                <button class="btn btn-light" type="reset">Clear</button>
+                <button class="btn btn-primary" type="submit">Find matching hospitals →</button>
+            </div>
+        </form>
+    </div>
+</template>

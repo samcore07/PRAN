@@ -1,0 +1,52 @@
+<!-- LOGIN SCREEN COMPONENT -->
+<section id="loginScreen" class="screen auth-screen">
+    <div class="auth-decoration"></div>
+
+    <div class="auth-card">
+        <a class="brand auth-brand" href="#">
+            <span class="brand-symbol">✚</span>
+            <span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span>
+        </a>
+
+        <div class="auth-intro">
+            <span class="eyebrow">WELCOME TO PRAN</span>
+            <h1>Every second<br><span>matters.</span></h1>
+            <p>Connecting patients, ambulances and hospitals for faster emergency coordination.</p>
+        </div>
+
+        <form id="loginForm">
+            <label class="field">
+                Email address
+                <input type="email" id="emailInput" placeholder="you@example.com" required>
+            </label>
+            <label class="field">
+                Password
+                <input type="password" id="passwordInput" placeholder="Enter any demo password" minlength="4" required>
+            </label>
+            <p class="form-error" id="loginError"></p>
+            <button class="btn btn-primary btn-wide" type="submit">Continue with email <span>→</span></button>
+        </form>
+
+        <div class="auth-divider"><span>OR</span></div>
+        <button class="btn btn-guest btn-wide" id="guestLogin">Continue as guest</button>
+        <p class="auth-foot">Demo access · No real account is created</p>
+    </div>
+
+    <div class="auth-side">
+        <div class="auth-side-content">
+            <span class="side-kicker">ONE CONNECTED NETWORK</span>
+            <h2>Better coordination.<br>Faster access to care.</h2>
+            <p>PRAN brings emergency information together in one coordinated platform.</p>
+            <div class="auth-feature">
+                <span>✚</span><div><strong>Emergency requests</strong><small>Organised patient information</small></div>
+            </div>
+            <div class="auth-feature">
+                <span>▦</span><div><strong>Hospital availability</strong><small>Sample bed and facility information</small></div>
+            </div>
+            <div class="auth-feature">
+                <span>⌖</span><div><strong>Connected coordination</strong><small>Role-based access to relevant tools</small></div>
+            </div>
+        </div>
+        <div class="side-bottom">PRAN · Emergency Hospital Coordination System</div>
+    </div>
+</section>

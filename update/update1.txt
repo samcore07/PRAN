@@ -1,0 +1,251 @@
+================================================================================
+PRAN - EMERGENCY HOSPITAL COORDINATION SYSTEM
+DOCUMENTATION UPDATE 1 (UPDATE1.TXT)
+Date: November 15, 2026
+Repository: https://github.com/samcore07/PRAN
+================================================================================
+
+1. EXECUTIVE OVERVIEW
+--------------------------------------------------------------------------------
+PRAN (Patient Response & Admission Network) is a role-based healthcare emergency
+coordination platform designed to connect patients, ambulance operators, 
+hospitals, and system administrators into one synchronized ecosystem.
+
+Core Capabilities:
+- Role-based workspaces: Patient/Attendant, Ambulance Operator, Hospital, Administrator.
+- Live hospital network tracking with general bed, ICU bed, and medical staff counts.
+- Patient emergency intake with validation (Indian phone numbers, triage categories).
+- Algorithmic hospital matching based on emergency type, bed availability, and distance.
+- Two-way admission reservation request and acceptance/rejection workflow.
+- Map and navigation integration for emergency transit.
+- Dual-tier data layer: Local fallback storage + Supabase PostgreSQL with Realtime broadcast.
+
+
+2. PROJECT STRUCTURE & ORGANIZATION
+--------------------------------------------------------------------------------
+The project is organized into modular frontend and backend architectures while 
+maintaining backwards compatibility with root files:
+
+PRAN/
+├── .env                                  # Active environment & Supabase keys
+├── .env.example                          # Template for environment variables
+├── .gitignore                            # Git ignore rules (node_modules, logs, .env)
+├── index.html                            # Main root web interface (preserved)
+├── script.js                             # Main root application script (preserved)
+├── style.css                             # Main root styles (preserved)
+│
+├── update/
+│   └── update1.txt                       # Comprehensive release & architecture docs
+│
+├── frontend/                             # Modular Frontend Directory
+│   ├── index.html                        # Modular frontend application entry point
+│   ├── README.md                         # Frontend component guide
+│   ├── html/                             # Isolated HTML component templates
+│   │   ├── login.html                    # Authentication screen template
+│   │   ├── role-selection.html           # Role selection grid template
+│   │   ├── app-shell.html                # App shell (sidebar, topbar, toast)
+│   │   ├── overview.html                 # Role dashboard overview templates
+│   │   ├── emergency-request.html        # Emergency request intake form template
+│   │   ├── bed-availability.html         # Hospital directory & bed search template
+│   │   ├── hospital-matching.html        # Matching recommendation template
+│   │   ├── reservations.html             # Reservations list template
+│   │   ├── navigation.html               # Hospital map navigation template
+│   │   └── bed-management.html           # Bed capacity update template
+│   ├── css/                              # Isolated CSS component stylesheets
+│   │   ├── main.css                      # Global design system tokens, reset & buttons
+│   │   ├── login.css                     # Auth screen & split hero styles
+│   │   ├── role-selection.css            # Role cards, badges & grid styles
+│   │   ├── app-shell.css                 # Sidebar, mobile drawer & topbar
+│   │   ├── overview.css                  # Stats grid, hero panel & quick cards
+│   │   ├── emergency-request.css         # Form grid & request cards
+│   │   ├── bed-availability.css          # Hospital cards, bed badges & tags
+│   │   ├── hospital-matching.css         # Summary box & match score badges
+│   │   ├── reservations.css              # Reservation cards & status table
+│   │   ├── navigation.css                # Map panel & navigation pins
+│   │   └── bed-management.css            # Bed management metrics & forms
+│   └── js/                               # Isolated JS component controllers
+│       ├── main.js                       # State management & route dispatcher
+│       ├── supabase.js                   # Supabase client & Realtime listeners
+│       ├── login.js                      # Login & guest session handlers
+│       ├── role-selection.js             # Workspace role initializer
+│       ├── app-shell.js                  # Navigation builder & shell events
+│       ├── overview.js                   # Role dashboard view renderers
+│       ├── emergency-request.js          # Intake validation & request creator
+│       ├── bed-availability.js           # Search filter & hospital card renderer
+│       ├── hospital-matching.js          # Compatibility scoring algorithm
+│       ├── reservations.js               # Admission actions & status updates
+│       ├── navigation.js                 # Hospital selector & Google Maps launcher
+│       └── bed-management.js             # Bed capacity editor & request review
+│
+└── backend/                              # Modular Backend Directory
+    ├── server.js                         # REST API server (port 5001, CORS enabled)
+    ├── package.json                      # Dependencies: @supabase/supabase-js, dotenv
+    ├── .env                              # Backend environment configuration
+    ├── .env.example                      # Backend env template
+    ├── README.md                         # Backend API and setup documentation
+    ├── supabaseClient.js                 # Supabase client wrapper & repository
+    ├── data/
+    │   └── db.json                       # Local JSON persistence store
+    ├── database/
+    │   └── schema.sql                    # Supabase SQL table definitions, RLS & seed data
+    └── routes/
+        ├── auth.js                       # Auth & guest demo routes
+        ├── hospitals.js                  # Hospital directory & bed capacity routes
+        └── requests.js                   # Emergency intake & reservation routes
+
+
+3. COMPONENT MAPPING MATRIX
+--------------------------------------------------------------------------------
+Each page and section in the platform is isolated into matching HTML, CSS, and JS:
+
+Component Name       HTML File                   CSS File                    JS File
+----------------------------------------------------------------------------------------------
+Global Base          index.html                  main.css                    main.js
+Supabase Layer       -                           -                           supabase.js
+Authentication       login.html                  login.css                   login.js
+Role Selection       role-selection.html         role-selection.css          role-selection.js
+App Shell & Layout   app-shell.html              app-shell.css               app-shell.js
+Overview Dashboards  overview.html               overview.css                overview.js
+Emergency Request    emergency-request.html      emergency-request.css       emergency-request.js
+Bed Availability     bed-availability.html       bed-availability.css        bed-availability.js
+Hospital Matching    hospital-matching.html      hospital-matching.css       hospital-matching.js
+Reservations         reservations.html           reservations.css            reservations.js
+Navigation & Map     navigation.html             navigation.css              navigation.js
+Bed Management       bed-management.html         bed-management.css          bed-management.js
+
+
+4. SUPABASE DATABASE ARCHITECTURE
+--------------------------------------------------------------------------------
+A. Database Tables (PostgreSQL):
+1. `public.hospitals`:
+   - id: BIGINT PRIMARY KEY
+   - name: TEXT NOT NULL
+   - area: TEXT NOT NULL
+   - distance: NUMERIC(5,2) DEFAULT 0
+   - general: INTEGER DEFAULT 0 (General ward beds available)
+   - icu: INTEGER DEFAULT 0 (ICU beds available)
+   - staff: INTEGER DEFAULT 0 (On-duty medical staff)
+   - categories: TEXT[] (Supported emergency categories: Accident, Cardiac, Neurological, General)
+   - facilities: TEXT[] (Available facilities: Emergency, ICU, Trauma Care, etc.)
+   - created_at: TIMESTAMPTZ DEFAULT NOW()
+
+2. `public.emergency_requests`:
+   - id: BIGINT PRIMARY KEY
+   - patient_name: TEXT NOT NULL
+   - age: INTEGER NOT NULL
+   - contact: TEXT NOT NULL
+   - category: TEXT NOT NULL
+   - facility: TEXT NOT NULL ('General' or 'ICU')
+   - location: TEXT NOT NULL
+   - notes: TEXT DEFAULT ''
+   - status: TEXT DEFAULT 'Matching' ('Matching', 'Pending', 'Accepted', 'Rejected')
+   - hospital_id: BIGINT REFERENCES public.hospitals(id)
+   - owner: TEXT DEFAULT 'guest'
+   - created_at: TIMESTAMPTZ DEFAULT NOW()
+
+3. `public.reservations`:
+   - id: BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY
+   - request_id: BIGINT REFERENCES public.emergency_requests(id)
+   - hospital_id: BIGINT REFERENCES public.hospitals(id)
+   - patient_name: TEXT NOT NULL
+   - bed_type: TEXT NOT NULL
+   - status: TEXT DEFAULT 'Pending'
+   - created_at: TIMESTAMPTZ DEFAULT NOW()
+
+B. Realtime Subscriptions:
+The frontend `frontend/js/supabase.js` subscribes to PostgreSQL changes on tables:
+- `hospitals`: Updates bed availability badges and graphs live across all clients.
+- `emergency_requests`: Broadcasts incoming patient triage requests to hospitals & ambulances.
+- `reservations`: Notifies patients immediately when hospital accepts/rejects admission.
+
+
+5. BACKEND REST API SPECIFICATION
+--------------------------------------------------------------------------------
+Base URL: http://localhost:5001
+
+Endpoints:
+- GET  /api/health
+  Returns system health status and database mode ('supabase' or 'local_storage').
+
+- GET  /api/supabase/status
+  Returns Supabase connectivity and URL details.
+
+- POST /api/auth/login
+  Body: { "email": "user@example.com", "password": "password" }
+  Returns authenticated user session.
+
+- POST /api/auth/guest
+  Returns guest demo user session.
+
+- GET  /api/hospitals
+  Returns list of all connected hospitals with bed counts and facilities.
+
+- GET  /api/hospitals/:id
+  Returns detailed hospital profile.
+
+- PUT  /api/hospitals/:id/capacity
+  Body: { "general": 10, "icu": 3, "staff": 7 }
+  Updates hospital bed and staff availability in Supabase and local store.
+
+- GET  /api/requests
+  Returns all emergency requests across the network.
+
+- POST /api/requests
+  Body: {
+    "patientName": "Ramesh Sen",
+    "age": 52,
+    "contact": "9830123456",
+    "category": "Cardiac",
+    "facility": "ICU",
+    "location": "Salt Lake Sector V",
+    "notes": "Chest pain, acute onset"
+  }
+  Creates emergency intake request in Supabase.
+
+- GET  /api/requests/:id
+  Returns single request record.
+
+- PUT  /api/requests/:id/status
+  Body: { "status": "Accepted", "hospitalId": 1 }
+  Updates status, assigns hospital, and automatically decrements bed inventory.
+
+- GET  /api/reservations
+  Returns list of admission reservations.
+
+- POST /api/reservations
+  Body: { "requestId": 12345, "hospitalId": 1, "patientName": "...", "bedType": "ICU" }
+  Creates explicit reservation record in Supabase.
+
+
+6. SETUP & EXECUTION GUIDE
+--------------------------------------------------------------------------------
+1. Prerequisites:
+   - Node.js (v18 or higher recommended)
+   - Web browser (Chrome, Safari, Firefox, Edge)
+
+2. Configure Supabase (Optional for live database):
+   - Create a free project at https://supabase.com
+   - Run the SQL script from `backend/database/schema.sql` in the SQL Editor
+   - Paste your project URL and keys into `.env`:
+     SUPABASE_URL=https://your-project.supabase.co
+     SUPABASE_ANON_KEY=your-anon-key
+     SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+3. Run the Backend API:
+   $ cd backend
+   $ npm install
+   $ node server.js
+   Backend starts on http://localhost:5001
+
+4. Run the Frontend:
+   - Open `index.html` (root) or `frontend/index.html` in your web browser.
+   - Or serve with static server:
+     $ npx serve frontend
+     # or
+     $ python3 -m http.server 3000 --directory frontend
+
+5. Testing & Verification:
+   All JavaScript code has been syntax-checked and tested. 
+   Backend health check, hospital listing, request creation, status updating, 
+   and reservation tracking have all been verified.
+================================================================================

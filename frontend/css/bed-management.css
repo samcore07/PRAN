@@ -1,0 +1,39 @@
+/* ============================================
+   BED MANAGEMENT & HOSPITAL CAPACITY STYLES
+============================================ */
+
+.capacity-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+}
+
+.capacity-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin: 18px 0;
+}
+
+.capacity-metric {
+    background: #f8fafc;
+    border: 1px solid var(--border);
+    padding: 14px;
+    border-radius: 9px;
+    text-align: center;
+}
+
+.capacity-metric small {
+    color: var(--muted);
+    font-size: 10px;
+    display: block;
+}
+
+.capacity-metric strong {
+    color: var(--navy);
+    font-size: 22px;
+    margin-top: 4px;
+    display: block;
+}

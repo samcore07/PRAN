@@ -1,0 +1,20 @@
+<!-- HOSPITAL NAVIGATION & MAP COMPONENT TEMPLATE -->
+<template id="navigation-template">
+    <div class="page-heading">
+        <span class="eyebrow">LOCATION SUPPORT</span>
+        <h1>Hospital <span>navigation.</span></h1>
+        <p>Open the selected hospital's location in Google Maps.</p>
+    </div>
+    <div class="map-panel">
+        <div class="map-pin">✚</div>
+    </div>
+    <div class="panel">
+        <h2 id="navHospitalName"></h2>
+        <p class="panel-subtitle" id="navHospitalArea"></p>
+        <label class="field">Select destination
+            <select id="navigationSelect"></select>
+        </label>
+        <button class="btn btn-primary" id="openGoogleMapsBtn">Open Google Maps →</button>
+        <p class="muted" style="margin-top:12px">Map search only. No live ambulance tracking or ETA is provided.</p>
+    </div>
+</template>

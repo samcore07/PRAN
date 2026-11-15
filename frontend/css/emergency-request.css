@@ -1,0 +1,78 @@
+/* ============================================
+   EMERGENCY REQUEST & INTAKE FORM STYLES
+============================================ */
+
+.panel {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 21px;
+    box-shadow: var(--shadow);
+    margin-bottom: 16px;
+}
+
+.panel h2 {
+    margin-bottom: 7px;
+}
+
+.panel-subtitle {
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 18px;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px;
+}
+
+.field.full {
+    grid-column: 1 / -1;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 9px;
+    margin-top: 17px;
+}
+
+.request-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 17px;
+    box-shadow: var(--shadow);
+}
+
+.request-card h3 {
+    color: var(--navy);
+    font-size: 13px;
+}
+
+.request-card p {
+    color: var(--muted);
+    font-size: 10px;
+    margin-top: 5px;
+}
+
+.card-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 9px;
+}
+
+.card-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 13px;
+}
+
+@media (max-width: 500px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .field.full { grid-column: auto; }
+}

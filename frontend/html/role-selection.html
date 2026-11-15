@@ -1,0 +1,44 @@
+<!-- ROLE SELECTION COMPONENT -->
+<section id="roleScreen" class="screen role-screen hidden">
+    <header class="role-header">
+        <a class="brand" href="#"><span class="brand-symbol">✚</span><span><strong>PRAN<span>.</span></strong><small>Emergency Coordination</small></span></a>
+        <button class="text-button" id="logoutFromRole">← Sign out</button>
+    </header>
+
+    <div class="role-content">
+        <span class="eyebrow">PERSONALISED WORKSPACE</span>
+        <h1>How will you use <span>PRAN?</span></h1>
+        <p>Select your role to access the relevant dashboard and tools.</p>
+
+        <div class="role-grid">
+            <button class="role-card" data-role="patient">
+                <span class="role-icon patient-icon">♡</span>
+                <strong>Patient / Attendant</strong>
+                <small>Submit emergency requests, explore hospitals and track reservations.</small>
+                <span class="role-link">Continue as patient →</span>
+            </button>
+
+            <button class="role-card" data-role="ambulance">
+                <span class="role-icon ambulance-icon">＋</span>
+                <strong>Ambulance Operator</strong>
+                <small>View emergency requests, coordinate hospital selection and access maps.</small>
+                <span class="role-link">Continue as operator →</span>
+            </button>
+
+            <button class="role-card" data-role="hospital">
+                <span class="role-icon hospital-icon">⌂</span>
+                <strong>Hospital</strong>
+                <small>Manage hospital capacity and review incoming admission requests.</small>
+                <span class="role-link">Continue as hospital →</span>
+            </button>
+
+            <button class="role-card" data-role="admin">
+                <span class="role-icon admin-icon">▣</span>
+                <strong>System Administrator</strong>
+                <small>Monitor the hospital network, requests and platform activity.</small>
+                <span class="role-link">Continue as admin →</span>
+            </button>
+        </div>
+        <p class="role-note">This is a demonstration role selector. Production access requires verified accounts and server-side permissions.</p>
+    </div>
+</section>

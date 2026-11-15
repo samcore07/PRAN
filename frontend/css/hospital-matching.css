@@ -1,0 +1,36 @@
+/* ============================================
+   HOSPITAL MATCHING & RECOMMENDATION STYLES
+============================================ */
+
+.summary-box {
+    background: #eaf4fb;
+    border: 1px solid #d8e9f5;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.summary-box strong {
+    display: block;
+    color: var(--navy);
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.summary-box small {
+    color: #7792a8;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.summary-box p {
+    color: #557288;
+    font-size: 11px;
+    margin-top: 4px;
+}
+
+.status-matching {
+    background: #eaf4fb;
+    color: var(--blue);
+}

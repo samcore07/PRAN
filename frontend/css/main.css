@@ -1,0 +1,231 @@
+/* ============================================
+   PRAN - GLOBAL BASE & UTILITY STYLES
+============================================ */
+
+:root {
+    --navy: #153b60;
+    --blue: #1767a5;
+    --teal: #159b98;
+    --red: #e45e66;
+    --green: #24966e;
+    --purple: #8067c7;
+    --text: #263c50;
+    --muted: #8292a1;
+    --border: #e7edf2;
+    --bg: #f5f8fb;
+    --white: #fff;
+    --shadow: 0 8px 28px rgba(28, 62, 91, .06);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: "DM Sans", sans-serif;
+    font-size: 14px;
+}
+
+button, input, select, textarea {
+    font: inherit;
+}
+
+button {
+    cursor: pointer;
+}
+
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+    outline: 3px solid #1767a533;
+    outline-offset: 2px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.screen {
+    min-height: 100vh;
+}
+
+h1, h2, h3, strong {
+    font-family: Manrope, sans-serif;
+}
+
+h1 {
+    color: var(--navy);
+    font-size: clamp(28px, 4vw, 40px);
+    letter-spacing: -1.3px;
+}
+
+h1 span {
+    color: var(--teal);
+}
+
+h2 {
+    color: var(--navy);
+    font-size: 20px;
+}
+
+p {
+    line-height: 1.7;
+}
+
+.eyebrow {
+    color: #91a1af;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 1.7px;
+}
+
+/* BRANDING */
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 11px;
+    text-decoration: none;
+    color: var(--navy);
+}
+
+.brand-symbol {
+    width: 45px;
+    height: 45px;
+    display: grid;
+    place-items: center;
+    background: #e7f4fb;
+    color: var(--blue);
+    border-radius: 14px;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.brand strong {
+    display: block;
+    font-size: 25px;
+    letter-spacing: 1px;
+}
+
+.brand strong span {
+    color: var(--teal);
+}
+
+.brand small {
+    display: block;
+    color: var(--muted);
+    font-size: 9px;
+}
+
+/* BUTTONS */
+.btn {
+    border: 0;
+    border-radius: 8px;
+    padding: 12px 17px;
+    font-size: 12px;
+    font-weight: 800;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    transition: .2s;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    filter: brightness(.97);
+}
+
+.btn-primary {
+    color: white;
+    background: var(--blue);
+}
+
+.btn-primary:hover {
+    background: #105487;
+}
+
+.btn-light {
+    background: #edf3f7;
+    color: #587085;
+}
+
+.btn-danger {
+    background: #fff0f0;
+    color: #c14f58;
+}
+
+.btn-success {
+    background: #e8f7ef;
+    color: #21845d;
+}
+
+.btn-guest {
+    background: #edf7f6;
+    color: #168d89;
+    border: 1px solid #d9efec;
+}
+
+.btn-wide {
+    width: 100%;
+}
+
+.btn-small {
+    border: 0;
+    border-radius: 6px;
+    padding: 8px 10px;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+/* GENERAL STATUS & BADGES */
+.status {
+    display: inline-block;
+    border-radius: 20px;
+    padding: 6px 9px;
+    font-size: 9px;
+    font-weight: 800;
+}
+
+.status-available, .status-accepted {
+    background: #e8f7ef;
+    color: #21845d;
+}
+
+.status-limited, .status-pending {
+    background: #fff4df;
+    color: #ad792c;
+}
+
+.status-unavailable, .status-rejected {
+    background: #fff0f0;
+    color: #c44e58;
+}
+
+.status-matching {
+    background: #eaf4fb;
+    color: var(--blue);
+}
+
+.empty-state {
+    grid-column: 1 / -1;
+    background: white;
+    border: 1px dashed #ccd8e1;
+    border-radius: 11px;
+    padding: 30px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+}
+
+.notice {
+    background: #eff6fb;
+    color: #627b91;
+    border-radius: 8px;
+    padding: 12px;
+    font-size: 10px;
+    line-height: 1.6;
+    margin-top: 20px;
+}

@@ -1,0 +1,67 @@
+/* ============================================
+   RESERVATIONS & ADMISSION STATUS STYLES
+============================================ */
+
+.reservation-card {
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+    padding: 17px;
+    box-shadow: var(--shadow);
+}
+
+.reservation-card h3 {
+    color: var(--navy);
+    font-size: 13px;
+}
+
+.reservation-card p {
+    color: var(--muted);
+    font-size: 10px;
+    margin-top: 5px;
+}
+
+.table-wrap {
+    overflow-x: auto;
+    background: white;
+    border: 1px solid var(--border);
+    border-radius: 11px;
+}
+
+table {
+    border-collapse: collapse;
+    width: 100%;
+    min-width: 570px;
+}
+
+th, td {
+    text-align: left;
+    padding: 13px;
+    border-bottom: 1px solid var(--border);
+    font-size: 10px;
+}
+
+th {
+    color: #8293a2;
+    background: #f8fafc;
+    font-size: 9px;
+    letter-spacing: .6px;
+}
+
+td {
+    color: #536b7e;
+}
+
+td strong {
+    color: var(--navy);
+}
+
+.role-chip {
+    display: inline-block;
+    padding: 6px 9px;
+    background: #eaf4fb;
+    color: var(--blue);
+    border-radius: 20px;
+    font-size: 9px;
+    font-weight: 800;
+}

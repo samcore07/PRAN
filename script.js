@@ -6,6 +6,140 @@
 
 const STORAGE = "PRAN_ROLE_DEMO_V1";
 
+// ============================================
+// SUPABASE DATABASE INTEGRATION
+// ============================================
+const SUPABASE_CONFIG = {
+    url: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_URL) || "https://your-project-id.supabase.co",
+    anonKey: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_ANON_KEY) || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key-here"
+};
+
+let supabaseClient = null;
+
+function isSupabaseAvailable() {
+    return Boolean(
+        window.supabase &&
+        SUPABASE_CONFIG.url &&
+        SUPABASE_CONFIG.anonKey &&
+        !SUPABASE_CONFIG.url.includes("your-project-id") &&
+        !SUPABASE_CONFIG.anonKey.includes("your-anon-key")
+    );
+}
+
+function initSupabase() {
+    if (isSupabaseAvailable()) {
+        try {
+            supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+            console.log("✓ Connected to Supabase at:", SUPABASE_CONFIG.url);
+            supabaseSync();
+        } catch (e) {
+            console.warn("Supabase initialization error:", e);
+        }
+    } else {
+        console.log("ℹ Running in local demo mode. Configure .env and frontend config to connect to Supabase.");
+    }
+}
+
+async function supabaseSync() {
+    if (!supabaseClient) return;
+    try {
+        const { data: hosp } = await supabaseClient.from("hospitals").select("*").order("id");
+        if (hosp && hosp.length > 0) {
+            data.hospitals = hosp.map(h => ({
+                id: Number(h.id),
+                name: h.name,
+                area: h.area,
+                distance: Number(h.distance),
+                general: Number(h.general),
+                icu: Number(h.icu),
+                staff: Number(h.staff),
+                categories: Array.isArray(h.categories) ? h.categories : [],
+                facilities: Array.isArray(h.facilities) ? h.facilities : []
+            }));
+            saveData();
+            renderPage();
+        }
+
+        const { data: reqs } = await supabaseClient.from("emergency_requests").select("*").order("created_at", { ascending: false });
+        if (reqs) {
+            data.requests = reqs.map(r => ({
+                id: Number(r.id),
+                patientName: r.patient_name,
+                age: Number(r.age),
+                contact: r.contact,
+                category: r.category,
+                facility: r.facility,
+                location: r.location,
+                notes: r.notes || "",
+                status: r.status,
+                hospitalId: r.hospital_id ? Number(r.hospital_id) : null,
+                owner: r.owner || "guest",
+                createdAt: r.created_at
+            }));
+            saveData();
+            renderPage();
+        }
+    } catch (e) {
+        console.warn("Supabase sync warning:", e);
+    }
+}
+
+async function supabaseUpdateBeds(hospitalId, { general, icu, staff }) {
+    if (!supabaseClient) return;
+    try {
+        await supabaseClient.from("hospitals").update({ general, icu, staff }).eq("id", hospitalId);
+    } catch (e) {
+        console.warn("Supabase update beds error:", e);
+    }
+}
+
+async function supabaseCreateRequest(req) {
+    if (!supabaseClient) return;
+    try {
+        await supabaseClient.from("emergency_requests").insert([{
+            id: req.id,
+            patient_name: req.patientName,
+            age: req.age,
+            contact: req.contact,
+            category: req.category,
+            facility: req.facility,
+            location: req.location,
+            notes: req.notes || "",
+            status: req.status || "Matching",
+            hospital_id: req.hospitalId || null,
+            owner: req.owner || "guest"
+        }]);
+    } catch (e) {
+        console.warn("Supabase create request error:", e);
+    }
+}
+
+async function supabaseUpdateRequest(requestId, status, hospitalId = null) {
+    if (!supabaseClient) return;
+    try {
+        const payload = { status };
+        if (hospitalId) payload.hospital_id = hospitalId;
+        await supabaseClient.from("emergency_requests").update(payload).eq("id", requestId);
+    } catch (e) {
+        console.warn("Supabase update request error:", e);
+    }
+}
+
+async function supabaseAddReservation(reservation) {
+    if (!supabaseClient) return;
+    try {
+        await supabaseClient.from("reservations").insert([{
+            request_id: reservation.requestId,
+            hospital_id: reservation.hospitalId,
+            patient_name: reservation.patientName,
+            bed_type: reservation.bedType,
+            status: reservation.status || "Pending"
+        }]);
+    } catch (e) {
+        console.warn("Supabase reservation error:", e);
+    }
+}
+
 const hospitalsDefault = [
     {id:1,name:"Aster Care Medical Centre",area:"Salt Lake Sector V, Kolkata",distance:3.2,general:12,icu:4,staff:8,categories:["Accident","Cardiac","Neurological","General"],facilities:["Emergency","ICU","Trauma Care","Cardiac Care"]},
     {id:2,name:"Northview Multispeciality Hospital",area:"New Town, Kolkata",distance:5.6,general:8,icu:2,staff:6,categories:["Accident","Cardiac","General"],facilities:["Emergency","ICU","Trauma Care"]},
@@ -556,7 +690,8 @@ document.addEventListener("submit",event => {
 
     data.requests.push(request);
     saveData();
-    toast("Request created in demo mode.");
+    supabaseCreateRequest(request);
+    toast("Request created successfully.");
     openPage("matches");
 });
 
@@ -941,7 +1076,8 @@ document.addEventListener("submit",event => {
     h.staff = staff;
 
     saveData();
-    toast("Hospital capacity updated in demo mode.");
+    supabaseUpdateBeds(selectedHospital, { general, icu, staff });
+    toast("Hospital capacity updated.");
     renderPage();
 });
 
@@ -1007,7 +1143,15 @@ function createPatientReservation(hospitalId) {
     request.status = "Pending";
 
     saveData();
-    toast("Admission request sent in demo mode.");
+    supabaseUpdateRequest(request.id, "Pending", h.id);
+    supabaseAddReservation({
+        requestId: request.id,
+        hospitalId: h.id,
+        patientName: request.patientName,
+        bedType: request.facility,
+        status: "Pending"
+    });
+    toast("Admission request sent.");
     openPage("reservations");
 }
 
@@ -1038,7 +1182,8 @@ function assignAmbulanceHospital(hospitalId) {
     request.status = "Pending";
 
     saveData();
-    toast("Hospital selected in demo mode.");
+    supabaseUpdateRequest(request.id, "Pending", h.id);
+    toast("Hospital selected.");
     selectedNavigationHospital = h.id;
     openPage("navigation");
 }
@@ -1075,7 +1220,8 @@ function updateRequestStatus(id,status) {
 
     request.status = status;
     saveData();
-    toast("Request " + status.toLowerCase() + " in demo mode.");
+    supabaseUpdateRequest(id, status, request.hospitalId);
+    toast("Request " + status.toLowerCase() + ".");
     renderPage();
 }
 
@@ -1085,7 +1231,8 @@ function updateRequestStatus(id,status) {
 
 function initialise() {
     showScreen("loginScreen");
-    console.log("PRAN role-based demo is ready.");
+    initSupabase();
+    console.log("PRAN role-based system is ready.");
 }
 
 initialise();

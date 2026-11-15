@@ -1,0 +1,78 @@
+<!-- OVERVIEW DASHBOARD COMPONENT TEMPLATES -->
+<template id="overview-patient-template">
+    <div class="page-heading">
+        <span class="eyebrow">PATIENT WORKSPACE</span>
+        <h1>Your care journey, <span>connected.</span></h1>
+        <p>Explore hospitals, submit an emergency request and follow its demo status.</p>
+    </div>
+    <div class="hero-panel">
+        <div>
+            <span class="hero-kicker">PRAN PATIENT PORTAL</span>
+            <h2>Find the right care.<br>With better coordination.</h2>
+            <p>Submit your requirements and explore sample hospitals with suitable facilities and bed availability.</p>
+            <button class="btn" data-go="request">Create emergency request →</button>
+        </div>
+        <div class="hero-mark">✚</div>
+    </div>
+    <div class="section-heading">
+        <h2>Your overview</h2>
+        <span class="muted">Demo information</span>
+    </div>
+    <div class="stats-grid" id="patientOverviewStats"></div>
+    <div class="section-heading"><h2>Quick actions</h2></div>
+    <div class="quick-grid">
+        <button class="quick-card" data-go="request">
+            <span class="quick-icon">＋</span>
+            <strong>Emergency request</strong>
+            <small>Submit patient information</small>
+        </button>
+        <button class="quick-card" data-go="beds">
+            <span class="quick-icon">▦</span>
+            <strong>Bed availability</strong>
+            <small>Explore connected hospitals</small>
+        </button>
+        <button class="quick-card" data-go="reservations">
+            <span class="quick-icon">▤</span>
+            <strong>My reservations</strong>
+            <small>Track your request status</small>
+        </button>
+    </div>
+    <div class="notice">Demo prototype only. This platform does not contact emergency services or provide real-time medical availability. In India, call 112 for a real emergency.</div>
+</template>
+
+<template id="overview-ambulance-template">
+    <div class="page-heading">
+        <span class="eyebrow">AMBULANCE OPERATOR</span>
+        <h1>Welcome to your <span>response centre.</span></h1>
+        <p>Review emergency requests and explore suitable sample hospital destinations.</p>
+    </div>
+    <div class="hero-panel">
+        <div>
+            <span class="hero-kicker">AMBULANCE COORDINATION</span>
+            <h2>Coordinate the next step.</h2>
+            <p>Review submitted emergency requests and explore hospital availability.</p>
+            <button class="btn" data-go="requests">View emergency requests →</button>
+        </div>
+        <div class="hero-mark">＋</div>
+    </div>
+    <div class="stats-grid" id="ambulanceOverviewStats"></div>
+    <div class="section-heading"><h2>Operator tools</h2></div>
+    <div class="quick-grid">
+        <button class="quick-card" data-go="requests">
+            <span class="quick-icon">＋</span>
+            <strong>Emergency requests</strong>
+            <small>Review submitted requests</small>
+        </button>
+        <button class="quick-card" data-go="matches">
+            <span class="quick-icon">⌕</span>
+            <strong>Hospital matching</strong>
+            <small>Compare suitable destinations</small>
+        </button>
+        <button class="quick-card" data-go="navigation">
+            <span class="quick-icon">➤</span>
+            <strong>Navigation</strong>
+            <small>Open hospital map links</small>
+        </button>
+    </div>
+    <div class="notice">This demo does not dispatch ambulances, track GPS locations or provide real-time routing.</div>
+</template>

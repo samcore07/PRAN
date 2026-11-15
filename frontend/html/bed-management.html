@@ -1,0 +1,30 @@
+<!-- BED MANAGEMENT & CAPACITY UPDATE TEMPLATE -->
+<template id="bed-management-template">
+    <div class="page-heading">
+        <span class="eyebrow">HOSPITAL MANAGEMENT</span>
+        <h1>Bed <span>management.</span></h1>
+        <p>Update the sample availability for your selected hospital.</p>
+    </div>
+    <div class="panel">
+        <h2>Hospital profile</h2>
+        <div id="capacityHospitalSelector"></div>
+        <div class="bed-row" id="capacityBedRow"></div>
+        <form id="capacityForm">
+            <div class="form-grid">
+                <label class="field">General beds
+                    <input type="number" id="editGeneral" min="0" max="500" required>
+                </label>
+                <label class="field">ICU beds
+                    <input type="number" id="editICU" min="0" max="200" required>
+                </label>
+                <label class="field">Medical staff
+                    <input type="number" id="editStaff" min="0" max="500" required>
+                </label>
+            </div>
+            <p id="capacityError" class="form-error"></p>
+            <div class="form-actions">
+                <button class="btn btn-primary" type="submit">Save capacity</button>
+            </div>
+        </form>
+    </div>
+</template>

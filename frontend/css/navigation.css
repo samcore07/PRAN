@@ -1,0 +1,35 @@
+/* ============================================
+   HOSPITAL NAVIGATION & MAP STYLES
+============================================ */
+
+.map-panel {
+    min-height: 230px;
+    border-radius: 12px;
+    border: 1px solid #dcebe5;
+    background-color: #eaf3ef;
+    background-image:
+        linear-gradient(35deg, transparent 47%, #d6e5df 48%, #d6e5df 50%, transparent 51%),
+        linear-gradient(120deg, transparent 47%, #d6e5df 48%, #d6e5df 50%, transparent 51%);
+    background-size: 75px 75px;
+    display: grid;
+    place-items: center;
+    margin-bottom: 16px;
+}
+
+.map-pin {
+    width: 57px;
+    height: 57px;
+    background: var(--blue);
+    color: white;
+    display: grid;
+    place-items: center;
+    border-radius: 50% 50% 50% 10%;
+    transform: rotate(-45deg);
+    font-size: 26px;
+}
+
+.map-caption {
+    color: #718a86;
+    font-size: 10px;
+    margin-top: -45px;
+}
