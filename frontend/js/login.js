@@ -26,7 +26,7 @@ function initAuth() {
             }
 
             if (password.length < 4) {
-                if (error) error.textContent = "Please enter at least 4 characters for the demo password.";
+                if (error) error.textContent = "Please enter your password (minimum 4 characters).";
                 return;
             }
 

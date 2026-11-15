@@ -159,8 +159,7 @@ async function supabaseAddReservation(reservation) {
 const roleNames = {
     patient:"Patient / Attendant",
     ambulance:"Ambulance Operator",
-    hospital:"Hospital",
-    admin:"System Administrator"
+    hospital:"Hospital Staff"
 };
 
 const roleMenus = {
@@ -183,12 +182,6 @@ const roleMenus = {
         ["overview","⌂","Overview"],
         ["capacity","▦","Bed Management"],
         ["requests","▤","Incoming Requests"],
-        ["reservations","✓","Reservations"]
-    ],
-    admin:[
-        ["overview","⌂","Network Overview"],
-        ["beds","▦","Hospital Network"],
-        ["requests","▤","All Requests"],
         ["reservations","✓","Reservations"]
     ]
 };
@@ -284,7 +277,7 @@ document.getElementById("loginForm").addEventListener("submit",event => {
     }
 
     if (password.length < 4) {
-        error.textContent = "Please enter at least 4 characters for the demo password.";
+        error.textContent = "Please enter your password (minimum 4 characters).";
         return;
     }
 
@@ -551,13 +544,6 @@ function renderPage() {
         if (currentPage === "requests") root.innerHTML = hospitalRequests();
         if (currentPage === "reservations") root.innerHTML = hospitalReservations();
     }
-
-    if (currentRole === "admin") {
-        if (currentPage === "overview") root.innerHTML = adminHome();
-        if (currentPage === "beds") root.innerHTML = bedsPage();
-        if (currentPage === "requests") root.innerHTML = allRequestsPage();
-        if (currentPage === "reservations") root.innerHTML = allReservationsPage();
-    }
 }
 
 /* ============================================
@@ -569,17 +555,17 @@ function patientHome() {
     const t = totals();
 
     return `
-        ${heading("PATIENT WORKSPACE","Your care journey, <span>connected.</span>","Explore hospitals, submit an emergency request and follow its demo status.")}
+        ${heading("PATIENT WORKSPACE","Your care journey, <span>connected.</span>","Explore hospitals, submit an emergency request and follow live status.")}
         <div class="hero-panel">
             <div>
                 <span class="hero-kicker">PRAN PATIENT PORTAL</span>
                 <h2>Find the right care.<br>With better coordination.</h2>
-                <p>Submit your requirements and explore sample hospitals with suitable facilities and bed availability.</p>
+                <p>Submit your requirements and explore hospitals with suitable facilities and live bed availability.</p>
                 <button class="btn" data-go="request">Create emergency request →</button>
             </div>
             <div class="hero-mark">✚</div>
         </div>
-        <div class="section-heading"><h2>Your overview</h2><span class="muted">Demo information</span></div>
+        <div class="section-heading"><h2>Your overview</h2><span class="muted">Live status</span></div>
         ${statsHTML([
             stat("▦","Available general beds",t.general,"blue"),
             stat("✚","Available ICU beds",t.icu,"red"),
@@ -592,7 +578,6 @@ function patientHome() {
             ${quickCard("▦","Bed availability","Explore connected hospitals","beds")}
             ${quickCard("▤","My reservations","Track your request status","reservations")}
         </div>
-        <div class="notice">Demo prototype only. This platform does not contact emergency services or provide real-time medical availability. In India, call 112 for a real emergency.</div>
     `;
 }
 
@@ -783,7 +768,7 @@ function reservationsPage() {
     const own = data.requests.filter(r => r.owner === (currentUser.email || "guest"));
 
     return `
-        ${heading("ADMISSION COORDINATION","My <span>reservations.</span>","Follow the status of your demo admission requests.")}
+        ${heading("ADMISSION COORDINATION","My <span>reservations.</span>","Follow the status of your admission requests.")}
         <div class="card-grid">
             ${own.length ? own.slice().reverse().map(r=>requestCard(r)).join("") : emptyState("You have no requests yet.")}
         </div>
@@ -794,7 +779,7 @@ function hospitalReservations() {
     const own = data.requests.filter(r=>r.hospitalId===selectedHospital);
 
     return `
-        ${heading("HOSPITAL MANAGEMENT","Admission <span>reservations.</span>","Review requests associated with your selected demo hospital.")}
+        ${heading("HOSPITAL MANAGEMENT","Admission <span>reservations.</span>","Review requests associated with your selected hospital.")}
         <div class="card-grid">
             ${own.length ? own.slice().reverse().map(r=>requestCard(r)).join("") : emptyState("No reservations for this hospital.")}
         </div>
@@ -1046,12 +1031,12 @@ function ambulanceHome() {
     const t = totals();
 
     return `
-        ${heading("AMBULANCE OPERATOR","Welcome to your <span>response centre.</span>","Review emergency requests and explore suitable sample hospital destinations.")}
+        ${heading("AMBULANCE OPERATOR","Welcome to your <span>response centre.</span>","Review emergency requests and find the best hospital destinations.")}
         <div class="hero-panel">
             <div>
                 <span class="hero-kicker">AMBULANCE COORDINATION</span>
                 <h2>Coordinate the next step.</h2>
-                <p>Review submitted emergency requests and explore hospital availability.</p>
+                <p>Review submitted emergency requests, analyze triage, and explore live hospital availability.</p>
                 <button class="btn" data-go="requests">View emergency requests →</button>
             </div>
             <div class="hero-mark">＋</div>
@@ -1066,15 +1051,14 @@ function ambulanceHome() {
         <div class="quick-grid">
             ${quickCard("＋","Emergency requests","Review submitted requests","requests")}
             ${quickCard("⌕","Hospital matching","Compare suitable destinations","matches")}
-            ${quickCard("➤","Navigation","Open hospital map links","navigation")}
+            ${quickCard("➤","Navigation","Open hospital map and live GPS directions","navigation")}
         </div>
-        <div class="notice">This demo does not dispatch ambulances, track GPS locations or provide real-time routing.</div>
     `;
 }
 
 function ambulanceRequests() {
     return `
-        ${heading("RESPONSE COORDINATION","Emergency <span>requests.</span>","Review patient requests submitted through the PRAN demo.")}
+        ${heading("RESPONSE COORDINATION","Emergency <span>requests.</span>","Review patient requests submitted to the network.")}
         <div class="card-grid">
             ${data.requests.length ? data.requests.slice().reverse().map(r=>requestCard(r,false)).join("") : emptyState("No emergency requests have been submitted yet.")}
         </div>
@@ -1091,7 +1075,7 @@ function hospitalHome() {
     const pending = incoming.filter(r=>r.status==="Pending").length;
 
     return `
-        ${heading("HOSPITAL WORKSPACE","Your hospital, <span>your dashboard.</span>","Manage your selected hospital's sample capacity and review admission requests.")}
+        ${heading("HOSPITAL WORKSPACE","Your hospital, <span>your dashboard.</span>","Manage your selected hospital's capacity and review admission requests.")}
         <div class="hero-panel">
             <div>
                 <span class="hero-kicker">HOSPITAL CONTROL CENTRE</span>
@@ -1118,7 +1102,7 @@ function hospitalHome() {
 
 function hospitalSelect() {
     return `
-        <label class="field">Select your demo hospital
+        <label class="field">Select hospital
             <select id="hospitalSelect">
                 ${data.hospitals.map(h=>`<option value="${h.id}" ${h.id===selectedHospital?"selected":""}>${safe(h.name)}</option>`).join("")}
             </select>
@@ -1130,7 +1114,7 @@ function capacityPage() {
     const h = hospitalById(selectedHospital);
 
     return `
-        ${heading("HOSPITAL MANAGEMENT","Bed <span>management.</span>","Update the sample availability for your selected hospital.")}
+        ${heading("HOSPITAL MANAGEMENT","Bed <span>management.</span>","Update live bed availability for your selected hospital.")}
         <div class="panel">
             <h2>Hospital profile</h2>
             ${hospitalSelect()}
@@ -1170,67 +1154,6 @@ function hospitalRequests() {
         </div>
         <div class="card-grid">
             ${incoming.length ? incoming.slice().reverse().map(r=>requestCard(r)).join("") : emptyState("No requests have been assigned to this hospital yet.")}
-        </div>
-    `;
-}
-
-/* ============================================
-   ADMIN DASHBOARD
-============================================ */
-
-function adminHome() {
-    const t = totals();
-    const pending = data.requests.filter(r=>r.status==="Pending" || r.status==="Matching").length;
-    const accepted = data.requests.filter(r=>r.status==="Accepted").length;
-
-    return `
-        ${heading("SYSTEM ADMINISTRATION","Network <span>overview.</span>","Monitor the sample hospital network and platform requests.")}
-        <div class="hero-panel">
-            <div>
-                <span class="hero-kicker">PRAN NETWORK ADMINISTRATION</span>
-                <h2>One connected network.</h2>
-                <p>Review hospital capacity and monitor emergency coordination activity.</p>
-                <button class="btn" data-go="beds">View hospital network →</button>
-            </div>
-            <div class="hero-mark">▣</div>
-        </div>
-        ${statsHTML([
-            stat("⌂","Connected hospitals",data.hospitals.length,"blue"),
-            stat("▦","General beds",t.general,"green"),
-            stat("✚","ICU beds",t.icu,"red"),
-            stat("▤","Active requests",pending,"purple")
-        ])}
-        <div class="section-heading"><h2>Request overview</h2></div>
-        <div class="panel">
-            <div class="bed-row">
-                <div class="bed-stat"><small>Total requests</small><strong>${data.requests.length}</strong></div>
-                <div class="bed-stat"><small>Accepted</small><strong>${accepted}</strong></div>
-                <div class="bed-stat"><small>Pending / matching</small><strong>${pending}</strong></div>
-            </div>
-            <div class="card-actions">
-                <button class="btn btn-primary" data-go="requests">View all requests</button>
-                <button class="btn btn-light" data-go="reservations">View reservations</button>
-            </div>
-        </div>
-    `;
-}
-
-function allRequestsPage() {
-    return `
-        ${heading("NETWORK MONITORING","All emergency <span>requests.</span>","Monitor requests across the sample PRAN network.")}
-        <div class="card-grid">
-            ${data.requests.length ? data.requests.slice().reverse().map(r=>requestCard(r,false)).join("") : emptyState("No requests in the network yet.")}
-        </div>
-    `;
-}
-
-function allReservationsPage() {
-    const reservations = data.requests.filter(r=>r.hospitalId);
-
-    return `
-        ${heading("NETWORK MONITORING","All <span>reservations.</span>","Review hospital admission responses across the demo network.")}
-        <div class="card-grid">
-            ${reservations.length ? reservations.slice().reverse().map(r=>requestCard(r,false)).join("") : emptyState("No hospital reservations have been created.")}
         </div>
     `;
 }
@@ -1390,7 +1313,7 @@ function createPatientReservation(hospitalId) {
     const result = matchScore(h,request);
 
     if (!result.eligible) {
-        toast("This hospital does not meet the demo requirements.");
+        toast("This hospital does not have adequate capacity.");
         return;
     }
 
@@ -1429,7 +1352,7 @@ function assignAmbulanceHospital(hospitalId) {
     const result = matchScore(h,request);
 
     if (!result.eligible) {
-        toast("This hospital does not meet the demo requirements.");
+        toast("This hospital does not have adequate capacity.");
         return;
     }
 

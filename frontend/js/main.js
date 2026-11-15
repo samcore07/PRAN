@@ -117,13 +117,6 @@ function renderPage() {
         if (currentPage === "requests" && typeof hospitalRequests === "function") root.innerHTML = hospitalRequests();
         if (currentPage === "reservations" && typeof hospitalReservations === "function") root.innerHTML = hospitalReservations();
     }
-
-    if (currentRole === "admin") {
-        if (currentPage === "overview" && typeof adminHome === "function") root.innerHTML = adminHome();
-        if (currentPage === "beds" && typeof bedsPage === "function") root.innerHTML = bedsPage();
-        if (currentPage === "requests" && typeof allRequestsPage === "function") root.innerHTML = allRequestsPage();
-        if (currentPage === "reservations" && typeof allReservationsPage === "function") root.innerHTML = allReservationsPage();
-    }
 }
 
 /* ============================================

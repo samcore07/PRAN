@@ -23,12 +23,6 @@ const roleMenus = {
         ["capacity", "▦", "Bed Management"],
         ["requests", "▤", "Incoming Requests"],
         ["reservations", "✓", "Reservations"]
-    ],
-    admin: [
-        ["overview", "⌂", "Network Overview"],
-        ["beds", "▦", "Hospital Network"],
-        ["requests", "▤", "All Requests"],
-        ["reservations", "✓", "Reservations"]
     ]
 };
 

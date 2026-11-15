@@ -6,7 +6,7 @@ function reservationsPage() {
     const own = data.requests.filter(r => r.owner === (currentUser?.email || "guest"));
 
     return `
-        ${heading("ADMISSION COORDINATION", "My <span>reservations.</span>", "Follow the status of your demo admission requests.")}
+        ${heading("ADMISSION COORDINATION", "My <span>reservations.</span>", "Follow the status of your admission requests.")}
         <div class="card-grid">
             ${own.length ? own.slice().reverse().map(r => requestCard(r)).join("") : emptyState("You have no requests yet.")}
         </div>
@@ -17,20 +17,9 @@ function hospitalReservations() {
     const own = data.requests.filter(r => r.hospitalId === selectedHospital);
 
     return `
-        ${heading("HOSPITAL MANAGEMENT", "Admission <span>reservations.</span>", "Review requests associated with your selected demo hospital.")}
+        ${heading("HOSPITAL MANAGEMENT", "Admission <span>reservations.</span>", "Review requests associated with your selected hospital.")}
         <div class="card-grid">
             ${own.length ? own.slice().reverse().map(r => requestCard(r)).join("") : emptyState("No reservations for this hospital.")}
-        </div>
-    `;
-}
-
-function allReservationsPage() {
-    const reservations = data.requests.filter(r => r.hospitalId);
-
-    return `
-        ${heading("NETWORK MONITORING", "All <span>reservations.</span>", "Review hospital admission responses across the demo network.")}
-        <div class="card-grid">
-            ${reservations.length ? reservations.slice().reverse().map(r => requestCard(r, false)).join("") : emptyState("No hospital reservations have been created.")}
         </div>
     `;
 }
@@ -51,7 +40,7 @@ function createPatientReservation(hospitalId) {
     const result = typeof matchScore === "function" ? matchScore(h, request) : { eligible: true };
 
     if (!result.eligible) {
-        if (typeof toast === "function") toast("This hospital does not meet the demo requirements.");
+        if (typeof toast === "function") toast("This hospital does not have adequate capacity.");
         return;
     }
 

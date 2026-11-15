@@ -41,17 +41,17 @@ function patientHome() {
     const t = totals();
 
     return `
-        ${heading("PATIENT WORKSPACE", "Your care journey, <span>connected.</span>", "Explore hospitals, submit an emergency request and follow its demo status.")}
+        ${heading("PATIENT WORKSPACE", "Your care journey, <span>connected.</span>", "Explore hospitals, submit an emergency request and follow live status.")}
         <div class="hero-panel">
             <div>
                 <span class="hero-kicker">PRAN PATIENT PORTAL</span>
                 <h2>Find the right care.<br>With better coordination.</h2>
-                <p>Submit your requirements and explore sample hospitals with suitable facilities and bed availability.</p>
+                <p>Submit your requirements and explore hospitals with suitable facilities and live bed availability.</p>
                 <button class="btn" data-go="request">Create emergency request →</button>
             </div>
             <div class="hero-mark">✚</div>
         </div>
-        <div class="section-heading"><h2>Your overview</h2><span class="muted">Demo information</span></div>
+        <div class="section-heading"><h2>Your overview</h2><span class="muted">Live status</span></div>
         ${statsHTML([
             stat("▦", "Available general beds", t.general, "blue"),
             stat("✚", "Available ICU beds", t.icu, "red"),
@@ -64,7 +64,6 @@ function patientHome() {
             ${quickCard("▦", "Bed availability", "Explore connected hospitals", "beds")}
             ${quickCard("▤", "My reservations", "Track your request status", "reservations")}
         </div>
-        <div class="notice">Demo prototype only. This platform does not contact emergency services or provide real-time medical availability. In India, call 112 for a real emergency.</div>
     `;
 }
 
@@ -73,12 +72,12 @@ function ambulanceHome() {
     const t = totals();
 
     return `
-        ${heading("AMBULANCE OPERATOR", "Welcome to your <span>response centre.</span>", "Review emergency requests and explore suitable sample hospital destinations.")}
+        ${heading("AMBULANCE OPERATOR", "Welcome to your <span>response centre.</span>", "Review emergency requests and find the best hospital destinations.")}
         <div class="hero-panel">
             <div>
                 <span class="hero-kicker">AMBULANCE COORDINATION</span>
                 <h2>Coordinate the next step.</h2>
-                <p>Review submitted emergency requests and explore hospital availability.</p>
+                <p>Review submitted emergency requests, analyze triage, and explore live hospital availability.</p>
                 <button class="btn" data-go="requests">View emergency requests →</button>
             </div>
             <div class="hero-mark">＋</div>
@@ -93,9 +92,8 @@ function ambulanceHome() {
         <div class="quick-grid">
             ${quickCard("＋", "Emergency requests", "Review submitted requests", "requests")}
             ${quickCard("⌕", "Hospital matching", "Compare suitable destinations", "matches")}
-            ${quickCard("➤", "Navigation", "Open hospital map links", "navigation")}
+            ${quickCard("➤", "Navigation", "Open hospital map and live GPS directions", "navigation")}
         </div>
-        <div class="notice">This demo does not dispatch ambulances, track GPS locations or provide real-time routing.</div>
     `;
 }
 
@@ -105,7 +103,7 @@ function hospitalHome() {
     const pending = incoming.filter(r => r.status === "Pending").length;
 
     return `
-        ${heading("HOSPITAL WORKSPACE", "Your hospital, <span>your dashboard.</span>", "Manage your selected hospital's sample capacity and review admission requests.")}
+        ${heading("HOSPITAL WORKSPACE", "Your hospital, <span>your dashboard.</span>", "Manage your selected hospital's capacity and review admission requests.")}
         <div class="hero-panel">
             <div>
                 <span class="hero-kicker">HOSPITAL CONTROL CENTRE</span>
@@ -126,54 +124,6 @@ function hospitalHome() {
             ${quickCard("▦", "Manage capacity", "Update bed availability", "capacity")}
             ${quickCard("▤", "Incoming requests", "Review admission requests", "requests")}
             ${quickCard("✓", "Reservations", "Track admission decisions", "reservations")}
-        </div>
-    `;
-}
-
-function adminHome() {
-    if (data.hospitals.length === 0 && typeof syncFromDatabase === "function") {
-        syncFromDatabase();
-    }
-
-    const t = totals();
-    const pending = data.requests.filter(r => r.status === "Pending" || r.status === "Matching").length;
-    const accepted = data.requests.filter(r => r.status === "Accepted").length;
-
-    // Bed load calculations aligned with routing system
-    const estTotalGeneral = Math.max(t.general, data.hospitals.length * 40);
-    const estTotalICU = Math.max(t.icu, data.hospitals.length * 12);
-    const icuOccupancy = estTotalICU > 0 ? Math.round(((estTotalICU - t.icu) / estTotalICU) * 100) : 0;
-    const generalOccupancy = estTotalGeneral > 0 ? Math.round(((estTotalGeneral - t.general) / estTotalGeneral) * 100) : 0;
-    const networkLoad = Math.round((icuOccupancy * 0.6) + (generalOccupancy * 0.4));
-
-    return `
-        ${heading("SYSTEM ADMINISTRATION", "Network <span>overview.</span>", "Live hospital network capacity, triage activity and occupancy load.")}
-        <div class="hero-panel">
-            <div>
-                <span class="hero-kicker">NETWORK LOAD: ${networkLoad}% OCCUPANCY</span>
-                <h2>One connected network.</h2>
-                <p>Hospital bed management, clinical triage and emergency coordination active across ${data.hospitals.length} hospitals.</p>
-                <button class="btn" data-go="beds">View hospital network →</button>
-            </div>
-            <div class="hero-mark">▣</div>
-        </div>
-        ${statsHTML([
-            stat("⌂", "Connected hospitals", data.hospitals.length, "blue"),
-            stat("▦", "Available general beds", t.general, "green"),
-            stat("✚", "Available ICU beds", t.icu, "red"),
-            stat("⚡", "ICU occupancy load", `${icuOccupancy}%`, "purple")
-        ])}
-        <div class="section-heading"><h2>Request and admissions overview</h2></div>
-        <div class="panel">
-            <div class="bed-row">
-                <div class="bed-stat"><small>Total requests</small><strong>${data.requests.length}</strong></div>
-                <div class="bed-stat"><small>Accepted</small><strong>${accepted}</strong></div>
-                <div class="bed-stat"><small>Pending / matching</small><strong>${pending}</strong></div>
-            </div>
-            <div class="card-actions">
-                <button class="btn btn-primary" data-go="requests">View all requests</button>
-                <button class="btn btn-light" data-go="reservations">View reservations</button>
-            </div>
         </div>
     `;
 }

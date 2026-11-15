@@ -81,18 +81,9 @@ function requestCard(r, showActions = true) {
 
 function ambulanceRequests() {
     return `
-        ${heading("RESPONSE COORDINATION", "Emergency <span>requests.</span>", "Review patient requests submitted through the PRAN demo.")}
+        ${heading("RESPONSE COORDINATION", "Emergency <span>requests.</span>", "Review patient requests submitted to the network.")}
         <div class="card-grid">
             ${data.requests.length ? data.requests.slice().reverse().map(r => requestCard(r, false)).join("") : emptyState("No emergency requests have been submitted yet.")}
-        </div>
-    `;
-}
-
-function allRequestsPage() {
-    return `
-        ${heading("NETWORK MONITORING", "All emergency <span>requests.</span>", "Monitor requests across the sample PRAN network.")}
-        <div class="card-grid">
-            ${data.requests.length ? data.requests.slice().reverse().map(r => requestCard(r, false)).join("") : emptyState("No requests in the network yet.")}
         </div>
     `;
 }

@@ -5,8 +5,7 @@
 const roleNames = {
     patient: "Patient / Attendant",
     ambulance: "Ambulance Operator",
-    hospital: "Hospital",
-    admin: "System Administrator"
+    hospital: "Hospital Staff"
 };
 
 function initRoleSelection() {

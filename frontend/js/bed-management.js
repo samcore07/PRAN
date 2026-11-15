@@ -4,7 +4,7 @@
 
 function hospitalSelect() {
     return `
-        <label class="field">Select your demo hospital
+        <label class="field">Select hospital
             <select id="hospitalSelect">
                 ${data.hospitals.map(h => `<option value="${h.id}" ${h.id === selectedHospital ? "selected" : ""}>${safe(h.name)}</option>`).join("")}
             </select>
@@ -16,7 +16,7 @@ function capacityPage() {
     const h = hospitalById(selectedHospital) || data.hospitals[0];
 
     return `
-        ${heading("HOSPITAL MANAGEMENT", "Bed <span>management.</span>", "Update the sample availability for your selected hospital.")}
+        ${heading("HOSPITAL MANAGEMENT", "Bed <span>management.</span>", "Update live bed availability for your selected hospital.")}
         <div class="panel">
             <h2>Hospital profile</h2>
             ${hospitalSelect()}
