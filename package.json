@@ -2,7 +2,6 @@
   "name": "pran",
   "version": "2.0.0",
   "description": "PRAN - Emergency Hospital Coordination System",
-  "main": "api/index.js",
   "scripts": {
     "build": "echo 'Build complete'",
     "start": "node backend/server.js",

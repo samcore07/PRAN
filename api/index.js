@@ -3,12 +3,72 @@
  * Routes all /api/* requests on Vercel deployment
  */
 
+const fs = require('fs');
+const path = require('path');
 const { isConfigured, supabase, getSupabaseHospitals, getSupabaseRequests } = require('../backend/supabaseClient');
 const { handleAuthRoutes } = require('../backend/routes/auth');
 const { handleHospitalRoutes } = require('../backend/routes/hospitals');
 const { handleRequestRoutes } = require('../backend/routes/requests');
 const { handleTriageRoutes } = require('../backend/routes/triage');
 const { handleAiRoutes } = require('../backend/routes/ai');
+
+const MIME_TYPES = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf'
+};
+
+function serveStatic(pathname, res) {
+  const rootDir = path.resolve(__dirname, '..');
+  let cleanPath = pathname;
+  if (cleanPath === '/' || cleanPath === '') {
+    cleanPath = '/index.html';
+  }
+
+  const safePath = path.normalize(cleanPath).replace(/^(\.\.[\/\\])+/, '');
+  let filePath = path.join(rootDir, safePath);
+
+  // If not found in root, check in frontend/
+  if (!fs.existsSync(filePath) || (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory())) {
+    const frontendPath = path.join(rootDir, 'frontend', safePath);
+    if (fs.existsSync(frontendPath) && !fs.statSync(frontendPath).isDirectory()) {
+      filePath = frontendPath;
+    }
+  }
+
+  // Handle directory index
+  if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
+    const indexInDir = path.join(filePath, 'index.html');
+    if (fs.existsSync(indexInDir)) {
+      filePath = indexInDir;
+    }
+  }
+
+  if (fs.existsSync(filePath) && !fs.statSync(filePath).isDirectory()) {
+    const ext = path.extname(filePath).toLowerCase();
+    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+    const content = fs.readFileSync(filePath);
+    res.writeHead(200, {
+      'Content-Type': contentType,
+      'Content-Length': content.length,
+      'Cache-Control': ext === '.html' ? 'no-cache' : 'public, max-age=31536000, immutable'
+    });
+    res.end(content);
+    return true;
+  }
+
+  return false;
+}
 
 // In-memory cache for serverless invocation
 let db = { hospitals: [], requests: [] };
@@ -59,6 +119,12 @@ module.exports = async (req, res) => {
 
   const parsedUrl = new URL(req.url, `https://${req.headers.host || 'pran.vercel.app'}`);
   const pathname = parsedUrl.pathname;
+
+  // Serve static frontend assets for non-API routes (supports Vercel Node runtime)
+  if (!pathname.startsWith('/api')) {
+    const served = serveStatic(pathname, res);
+    if (served) return;
+  }
 
   // Sync DB on cold start
   if (db.hospitals.length === 0) {

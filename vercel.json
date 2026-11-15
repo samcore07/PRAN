@@ -1,6 +1,11 @@
 {
   "version": 2,
   "cleanUrls": true,
+  "functions": {
+    "api/index.js": {
+      "includeFiles": "{index.html,style.css,script.js,frontend/**}"
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
