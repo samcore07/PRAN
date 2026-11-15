@@ -139,7 +139,8 @@ function makeDraggable(element, handle = element) {
     let hasMoved = false;
 
     function onPointerDown(e) {
-        if (e.target.closest("button") || e.target.closest("input") || e.target.closest("a")) {
+        const interactive = e.target.closest("button, input, textarea, a");
+        if (interactive && interactive !== handle) {
             return;
         }
 

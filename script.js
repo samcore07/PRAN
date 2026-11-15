@@ -327,7 +327,8 @@ function makeDraggable(element, handle = element) {
     let hasMoved = false;
 
     function onPointerDown(e) {
-        if (e.target.closest("button") || e.target.closest("input") || e.target.closest("a")) {
+        const interactive = e.target.closest("button, input, textarea, a");
+        if (interactive && interactive !== handle) {
             return;
         }
 
@@ -573,7 +574,7 @@ function loadData() {
         const saved = localStorage.getItem(STORAGE);
         if (saved) {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed.hospitals) && parsed.hospitals.length > 0) {
+            if (Array.isArray(parsed.hospitals) && parsed.hospitals.length >= 10 && parsed.hospitals[0]?.name?.includes("Calcutta")) {
                 return parsed;
             }
         }
@@ -626,10 +627,10 @@ function requestById(id) {
 }
 
 function totals() {
-    return data.hospitals.reduce((t,h) => {
-        t.general += h.general;
-        t.icu += h.icu;
-        t.staff += h.staff;
+    return (data.hospitals || []).reduce((t,h) => {
+        t.general += (Number(h.general) || 0);
+        t.icu += (Number(h.icu) || 0);
+        t.staff += (Number(h.staff) || 0);
         return t;
     },{general:0,icu:0,staff:0});
 }
@@ -723,12 +724,16 @@ document.querySelectorAll("[data-role]").forEach(button => {
 function startWorkspace() {
     showScreen("appScreen");
 
-    const displayName = currentUser.name;
+    const displayName = currentUser?.name || (currentUser?.email ? currentUser.email.split("@")[0] : "Guest User");
 
-    document.getElementById("sidebarUser").textContent = displayName;
-    document.getElementById("sidebarRole").textContent = roleNames[currentRole];
-    document.getElementById("userAvatar").textContent = displayName.charAt(0).toUpperCase();
-    document.getElementById("topUser").textContent = displayName.charAt(0).toUpperCase();
+    const sidebarUser = document.getElementById("sidebarUser");
+    if (sidebarUser) sidebarUser.textContent = displayName;
+    const sidebarRole = document.getElementById("sidebarRole");
+    if (sidebarRole) sidebarRole.textContent = roleNames[currentRole] || "Workspace";
+    const userAvatar = document.getElementById("userAvatar");
+    if (userAvatar) userAvatar.textContent = (displayName.charAt(0) || "U").toUpperCase();
+    const topUser = document.getElementById("topUser");
+    if (topUser) topUser.textContent = (displayName.charAt(0) || "U").toUpperCase();
 
     buildNavigation();
     updateHeaderLocationPills();
@@ -737,6 +742,7 @@ function startWorkspace() {
 
 function buildNavigation() {
     const nav = document.getElementById("sidebarNav");
+    if (!nav || !currentRole || !roleMenus[currentRole]) return;
 
     nav.innerHTML = roleMenus[currentRole].map(item => `
         <button class="nav-link" data-page="${item[0]}">
@@ -751,6 +757,7 @@ function buildNavigation() {
 ============================================ */
 
 function openPage(page) {
+    if (!currentRole || !roleMenus[currentRole]) return;
     const allowed = roleMenus[currentRole].some(item => item[0] === page);
 
     if (!allowed) return;
@@ -758,13 +765,15 @@ function openPage(page) {
     currentPage = page;
 
     const item = roleMenus[currentRole].find(i => i[0] === page);
-    document.getElementById("pageTitle").textContent = item ? item[2] : "Overview";
+    const titleEl = document.getElementById("pageTitle");
+    if (titleEl) titleEl.textContent = item ? item[2] : "Overview";
 
     document.querySelectorAll("#sidebarNav .nav-link").forEach(button => {
         button.classList.toggle("active",button.dataset.page === page);
     });
 
-    document.getElementById("sidebar").classList.remove("open");
+    const sidebar = document.getElementById("sidebar");
+    if (sidebar) sidebar.classList.remove("open");
 
     renderPage();
 }
@@ -988,7 +997,8 @@ function renderPage() {
 ============================================ */
 
 function patientHome() {
-    const own = data.requests.filter(r => r.owner === currentUser.email || r.owner === "guest");
+    const userEmail = currentUser?.email || "guest";
+    const own = (data.requests || []).filter(r => r.owner === userEmail || r.owner === "guest");
     const t = totals();
 
     return `
@@ -1243,8 +1253,9 @@ function matchScore(h,r) {
 }
 
 function matchesPage() {
-    let request = [...data.requests].reverse().find(r =>
-        r.owner === (currentUser.email || "guest")
+    const userEmail = currentUser?.email || "guest";
+    let request = [...(data.requests || [])].reverse().find(r =>
+        r.owner === userEmail || r.owner === "guest"
     );
     let isSimulated = false;
 
@@ -1422,13 +1433,15 @@ function calculateNavDistance(c1, c2) {
 
 function recalculateAllDistances() {
     if (!currentUserCoords || typeof currentUserCoords.lat !== "number") return;
-    data.hospitals.forEach(h => {
+    (data.hospitals || []).forEach(h => {
         const coords = getHospitalCoords(h);
         const distKm = calculateNavDistance(currentUserCoords, coords);
         h.distance = distKm;
     });
     saveData();
-    renderPage();
+    if (currentRole) {
+        renderPage();
+    }
 }
 
 function updateHeaderLocationPills() {
@@ -2276,9 +2289,10 @@ document.addEventListener("click",event => {
 
 function createPatientReservation(hospitalId) {
     const h = hospitalById(hospitalId);
+    const userEmail = currentUser?.email || "guest";
 
-    const request = [...data.requests].reverse().find(r =>
-        r.owner === (currentUser.email || "guest") &&
+    const request = [...(data.requests || [])].reverse().find(r =>
+        (r.owner === userEmail || r.owner === "guest") &&
         r.status === "Matching"
     );
 
