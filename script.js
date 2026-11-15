@@ -4,15 +4,33 @@
    Frontend demo - HTML, CSS and JavaScript
 ============================================ */
 
-const STORAGE = "PRAN_ROLE_DEMO_V1";
+const STORAGE = "PRAN_SALT_LAKE_V2";
 
 // ============================================
 // SUPABASE DATABASE INTEGRATION
 // ============================================
 const SUPABASE_CONFIG = {
-    url: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_URL) || "https://your-project-id.supabase.co",
-    anonKey: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_ANON_KEY) || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key-here"
+    url: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_URL) || "https://kyvyvczcnvhdgbxsmkib.supabase.co",
+    anonKey: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_ANON_KEY) || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dnl2Y3pjbnZoZGdieHNta2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3NDUzNjYsImV4cCI6MjExMDMyMTM2Nn0.M5JTUQhWS3NKfHBoPYU6rJUPTGCX3s_cO4NbqYLwb5c"
 };
+
+const DEFAULT_HOSPITALS = [
+    { id: 1, name: "Calcutta Heart Clinic & Hospital", area: "HB Block, Sector III, Salt Lake, Kolkata", distance: 1.9, general: 24, icu: 8, staff: 14, categories: ["Cardiac", "General", "Accident"], facilities: ["Emergency", "ICU", "Cardiac Care", "CCU", "Cath Lab"] },
+    { id: 2, name: "National Institute of Homoeopathy (NIH)", area: "GE Block, Sector III, Salt Lake, Kolkata", distance: 1.6, general: 38, icu: 4, staff: 12, categories: ["General", "Accident"], facilities: ["Emergency", "ICU", "OPD", "Diagnostics"] },
+    { id: 3, name: "Matri Sadan Hospital (Bidhannagar)", area: "EE Block, Sector II, Salt Lake, Kolkata", distance: 2.1, general: 18, icu: 5, staff: 9, categories: ["General", "Maternity", "Accident"], facilities: ["Emergency", "ICU", "Maternity Care", "Trauma Care"] },
+    { id: 4, name: "Manipal Hospital Salt Lake (Columbia Asia)", area: "IB Block, Sector III, Salt Lake, Kolkata", distance: 2.4, general: 32, icu: 12, staff: 22, categories: ["Cardiac", "Accident", "Neurological", "General"], facilities: ["Emergency", "ICU", "Trauma Care", "Cardiac Care", "Neuro ICU"] },
+    { id: 5, name: "AMRI Hospital Salt Lake", area: "JC Block, Sector III, Salt Lake, Kolkata", distance: 2.6, general: 45, icu: 16, staff: 28, categories: ["Accident", "Cardiac", "Neurological", "General"], facilities: ["Emergency", "ICU", "Trauma Care", "Cardiac Care", "Dialysis"] },
+    { id: 6, name: "ILS Hospitals Salt Lake", area: "DD Block, Sector I, Salt Lake, Kolkata", distance: 2.9, general: 26, icu: 9, staff: 15, categories: ["Accident", "Cardiac", "General"], facilities: ["Emergency", "ICU", "Laparoscopy", "Trauma Care"] },
+    { id: 7, name: "Salt Lake Sub-Divisional Hospital", area: "DD Block, Sector I, Salt Lake, Kolkata", distance: 3.0, general: 52, icu: 6, staff: 18, categories: ["Accident", "General", "Maternity"], facilities: ["Emergency", "ICU", "Trauma Care", "Blood Bank"] },
+    { id: 8, name: "Apollo Multispeciality Hospitals", area: "58 Canal Circular Road, Kadapara, Kolkata", distance: 3.5, general: 58, icu: 22, staff: 35, categories: ["Cardiac", "Neurological", "Accident", "General"], facilities: ["Emergency", "ICU", "Trauma Care", "Cardiac Care", "Neuro Care", "Organ Transplant"] },
+    { id: 9, name: "Chittaranjan National Cancer Institute (CNCI)", area: "Street No. 299, Action Area I, New Town, Kolkata", distance: 3.8, general: 40, icu: 10, staff: 20, categories: ["Oncology", "General", "Neurological"], facilities: ["Emergency", "ICU", "Oncology Care", "Chemotherapy", "Radiology"] },
+    { id: 10, name: "Tata Medical Center", area: "14 MAR, Action Area II, New Town, Kolkata", distance: 5.2, general: 36, icu: 14, staff: 26, categories: ["Oncology", "General", "Cardiac"], facilities: ["Emergency", "ICU", "Oncology Care", "Surgical ICU", "PET-CT"] },
+    { id: 11, name: "Bhagirathi Neotia Woman and Child Care Centre", area: "Action Area I, New Town, Kolkata", distance: 3.6, general: 20, icu: 7, staff: 14, categories: ["Maternity", "Pediatric", "General"], facilities: ["Emergency", "NICU", "PICU", "Maternity Care"] },
+    { id: 12, name: "Ruby General Hospital", area: "Kasba Golpark, EM Bypass, Kolkata", distance: 6.2, general: 30, icu: 11, staff: 19, categories: ["Accident", "Cardiac", "Neurological", "General"], facilities: ["Emergency", "ICU", "Trauma Care", "Cardiac Care", "Burn Unit"] },
+    { id: 13, name: "Fortis Hospital Anandapur", area: "730 Anandapur, EM Bypass, Kolkata", distance: 5.9, general: 42, icu: 15, staff: 24, categories: ["Cardiac", "Accident", "Neurological", "General"], facilities: ["Emergency", "ICU", "Trauma Care", "Cardiac Care", "Cath Lab"] },
+    { id: 14, name: "Desun Hospital & Heart Institute", area: "720 Desun More, Kasba Golpark, EM Bypass, Kolkata", distance: 6.4, general: 48, icu: 18, staff: 25, categories: ["Cardiac", "Accident", "Neurological", "General"], facilities: ["Emergency", "ICU", "Cardiac Care", "Trauma Care", "Burns ICU"] },
+    { id: 15, name: "Medica Superspecialty Hospital", area: "127 Mukundapur, EM Bypass, Kolkata", distance: 7.6, general: 60, icu: 24, staff: 32, categories: ["Cardiac", "Accident", "Neurological", "General"], facilities: ["Emergency", "ICU", "Trauma Care", "Cardiac Care", "ECMO", "Stroke Unit"] }
+];
 
 let supabaseClient = null;
 
@@ -27,6 +45,23 @@ function isSupabaseAvailable() {
 }
 
 async function initSupabase() {
+    // 1. Immediate fetch from backend REST API (fastest, guaranteed)
+    try {
+        const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+            ? "http://localhost:5001"
+            : "";
+        const res = await fetch(`${apiHost}/api/hospitals`);
+        if (res.ok) {
+            const list = await res.json();
+            if (Array.isArray(list) && list.length > 0) {
+                data.hospitals = list;
+                saveData();
+                renderPage();
+            }
+        }
+    } catch(e) {}
+
+    // 2. Direct Supabase Client connection for real-time syncing
     if (!isSupabaseAvailable()) {
         try {
             const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
@@ -40,21 +75,17 @@ async function initSupabase() {
                     SUPABASE_CONFIG.anonKey = config.anonKey;
                 }
             }
-        } catch (e) {
-            // Fallback to local mode quietly
-        }
+        } catch (e) {}
     }
 
     if (isSupabaseAvailable()) {
         try {
             supabaseClient = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-            console.log("✓ Connected to Supabase at:", SUPABASE_CONFIG.url);
+            console.log("✓ Connected to Supabase directly at:", SUPABASE_CONFIG.url);
             await supabaseSync();
         } catch (e) {
-            console.warn("Supabase initialization error:", e);
+            console.warn("Supabase direct client error:", e);
         }
-    } else {
-        console.log("ℹ Running in local demo mode. Configure .env and frontend config to connect to Supabase.");
     }
 }
 
@@ -103,44 +134,84 @@ async function supabaseSync() {
 }
 
 async function supabaseUpdateBeds(hospitalId, { general, icu, staff }) {
-    if (!supabaseClient) return;
-    try {
-        await supabaseClient.from("hospitals").update({ general, icu, staff }).eq("id", hospitalId);
-    } catch (e) {
-        console.warn("Supabase update beds error:", e);
+    // Channel A: Direct Supabase Client
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from("hospitals").update({ general, icu, staff }).eq("id", hospitalId);
+        } catch (e) {
+            console.warn("Supabase direct update beds notice:", e);
+        }
     }
+
+    // Channel B: Backend REST API
+    try {
+        const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+            ? "http://localhost:5001"
+            : "";
+        await fetch(`${apiHost}/api/hospitals/${hospitalId}/capacity`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ general, icu, staff })
+        });
+    } catch (e) {}
 }
 
 async function supabaseCreateRequest(req) {
-    if (!supabaseClient) return;
-    try {
-        await supabaseClient.from("emergency_requests").insert([{
-            id: req.id,
-            patient_name: req.patientName,
-            age: req.age,
-            contact: req.contact,
-            category: req.category,
-            facility: req.facility,
-            location: req.location,
-            notes: req.notes || "",
-            status: req.status || "Matching",
-            hospital_id: req.hospitalId || null,
-            owner: req.owner || "guest"
-        }]);
-    } catch (e) {
-        console.warn("Supabase create request error:", e);
+    // Channel A: Direct Supabase Client
+    if (supabaseClient) {
+        try {
+            await supabaseClient.from("emergency_requests").insert([{
+                id: req.id,
+                patient_name: req.patientName,
+                age: req.age,
+                contact: req.contact,
+                category: req.category,
+                facility: req.facility,
+                location: req.location,
+                notes: req.notes || "",
+                status: req.status || "Matching",
+                hospital_id: req.hospitalId || null,
+                owner: req.owner || "guest"
+            }]);
+        } catch (e) {
+            console.warn("Supabase direct create request notice:", e);
+        }
     }
+
+    // Channel B: Backend REST API
+    try {
+        const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+            ? "http://localhost:5001"
+            : "";
+        await fetch(`${apiHost}/api/requests`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(req)
+        });
+    } catch (e) {}
 }
 
 async function supabaseUpdateRequest(requestId, status, hospitalId = null) {
-    if (!supabaseClient) return;
-    try {
-        const payload = { status };
-        if (hospitalId) payload.hospital_id = hospitalId;
-        await supabaseClient.from("emergency_requests").update(payload).eq("id", requestId);
-    } catch (e) {
-        console.warn("Supabase update request error:", e);
+    if (supabaseClient) {
+        try {
+            const payload = { status };
+            if (hospitalId) payload.hospital_id = hospitalId;
+            await supabaseClient.from("emergency_requests").update(payload).eq("id", requestId);
+        } catch (e) {
+            console.warn("Supabase update request notice:", e);
+        }
     }
+
+    try {
+        const apiHost = (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") && window.location.port !== "5001"
+            ? "http://localhost:5001"
+            : "";
+        await fetch(`${apiHost}/api/requests/${requestId}/status`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status, hospitalId })
+        });
+    } catch (e) {}
 }
 
 async function supabaseAddReservation(reservation) {
@@ -404,7 +475,7 @@ function loadData() {
         const saved = localStorage.getItem(STORAGE);
         if (saved) {
             const parsed = JSON.parse(saved);
-            if (Array.isArray(parsed.hospitals) && Array.isArray(parsed.requests)) {
+            if (Array.isArray(parsed.hospitals) && parsed.hospitals.length > 0) {
                 return parsed;
             }
         }
@@ -413,8 +484,24 @@ function loadData() {
     }
 
     return {
-        hospitals: [],
-        requests: []
+        hospitals: [...DEFAULT_HOSPITALS],
+        requests: [
+            {
+                id: 1794750001,
+                patientName: "Subhajit Chatterjee",
+                age: 48,
+                contact: "9830124567",
+                category: "Cardiac",
+                facility: "ICU",
+                location: "Salt Lake Sector V, Kolkata (Near College More)",
+                notes: "Acute retrosternal chest pain radiating to left jaw, SpO2 93%, diaphoresis. Suspected STEMI.",
+                vitals: { hr: 112, bp: "150/95", spo2: 93, consciousness: "Alert" },
+                status: "Matching",
+                hospitalId: 1,
+                owner: "guest",
+                createdAt: new Date().toISOString()
+            }
+        ]
     };
 }
 

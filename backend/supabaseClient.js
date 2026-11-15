@@ -20,8 +20,24 @@ try {
     console.warn("Notice: @supabase/supabase-js is not installed yet. Running in local fallback mode.");
 }
 
-const SUPABASE_URL = process.env.SUPABASE_URL || "";
-const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY || "";
+const DEFAULT_SUPABASE_URL = "https://kyvyvczcnvhdgbxsmkib.supabase.co";
+const DEFAULT_SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dnl2Y3pjbnZoZGdieHNta2liIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc5NDc0NTM2NiwiZXhwIjoyMTEwMzIxMzY2fQ.pCZfAGwjPwDErqpmbUrXug1mgdk7obnqLawALweVweI";
+
+const SUPABASE_URL = (process.env.SUPABASE_URL && !process.env.SUPABASE_URL.includes("your-project-id"))
+    ? process.env.SUPABASE_URL
+    : DEFAULT_SUPABASE_URL;
+
+function resolveSupabaseKey() {
+    if (process.env.SUPABASE_SERVICE_ROLE_KEY && !process.env.SUPABASE_SERVICE_ROLE_KEY.includes("your-service-role")) {
+        return process.env.SUPABASE_SERVICE_ROLE_KEY;
+    }
+    if (process.env.SUPABASE_ANON_KEY && !process.env.SUPABASE_ANON_KEY.includes("your-anon-key")) {
+        return process.env.SUPABASE_ANON_KEY;
+    }
+    return DEFAULT_SUPABASE_KEY;
+}
+
+const SUPABASE_KEY = resolveSupabaseKey();
 
 const isConfigured = Boolean(
     createClient &&

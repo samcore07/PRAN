@@ -30,6 +30,11 @@
             const systemDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
             const theme = saved || (systemDark ? "dark" : "light");
             document.documentElement.setAttribute("data-theme", theme);
+
+            window.PRAN_ENV = {
+                SUPABASE_URL: "https://kyvyvczcnvhdgbxsmkib.supabase.co",
+                SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dnl2Y3pjbnZoZGdieHNta2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3NDUzNjYsImV4cCI6MjExMDMyMTM2Nn0.M5JTUQhWS3NKfHBoPYU6rJUPTGCX3s_cO4NbqYLwb5c"
+            };
         })();
     </script>
 </head>

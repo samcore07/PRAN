@@ -9,9 +9,8 @@
  */
 
 const SUPABASE_CONFIG = {
-    // Replace with your project details from Supabase Dashboard -> Project Settings -> API
-    url: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_URL) || "https://your-project-id.supabase.co",
-    anonKey: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_ANON_KEY) || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.your-anon-key-here"
+    url: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_URL) || "https://kyvyvczcnvhdgbxsmkib.supabase.co",
+    anonKey: (window.PRAN_ENV && window.PRAN_ENV.SUPABASE_ANON_KEY) || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imt5dnl2Y3pjbnZoZGdieHNta2liIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTQ3NDUzNjYsImV4cCI6MjExMDMyMTM2Nn0.M5JTUQhWS3NKfHBoPYU6rJUPTGCX3s_cO4NbqYLwb5c"
 };
 
 let supabaseClient = null;
