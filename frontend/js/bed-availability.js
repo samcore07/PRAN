@@ -38,7 +38,7 @@ function hospitalCard(h, showMatch = false, score = 0) {
                 ${h.facilities.map(f => `<span class="tag">${safe(f)}</span>`).join("")}
             </div>
 
-            <p>Approx. ${h.distance} km · Sample distance</p>
+            <p>Approx. ${h.distance} km · ${Math.max(4, Math.round((h.distance || 4) * 2.2))} mins transit ETA</p>
 
             <div class="card-actions">
                 <button class="btn-small btn-light" data-map="${h.id}">View map</button>

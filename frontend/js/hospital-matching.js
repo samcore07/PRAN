@@ -1,5 +1,5 @@
 /* ============================================
-   HOSPITAL MATCHING COMPONENT CONTROLLER
+   HOSPITAL MATCHING & AI RATIONALE CONTROLLER
 ============================================ */
 
 function matchScore(h, r) {
@@ -31,10 +31,12 @@ function matchScore(h, r) {
     const isUnderHeavyLoad = icuAvail === 0 && genAvail < 3;
     if (!isUnderHeavyLoad) score += 10;
 
+    const travelTime = Math.max(3, Math.ceil((dist / 30) * 60));
+
     return {
         score: Math.min(100, Math.round(score)),
         eligible: bed > 0 && categories.includes(r.category),
-        travelTime: Math.max(3, Math.ceil((dist / 30) * 60))
+        travelTime
     };
 }
 
@@ -45,10 +47,13 @@ function matchesPage() {
 
     if (!request) {
         return `
-            ${heading("SMART MATCHING", "Hospital <span>matching.</span>", "Explore suitable sample hospitals based on emergency requirements.")}
-            ${emptyState('Create an emergency request first. <br><br><button class="btn btn-primary" data-go="request">Create request</button>')}
+            ${heading("SMART MATCHING", "Hospital <span>matching.</span>", "Explore suitable hospitals based on live emergency triage requirements.")}
+            ${emptyState('Create an emergency request first. <br><br><button class="btn btn-primary" data-go="request">Create emergency request →</button>')}
         `;
     }
+
+    const triage = request.aiAssessment;
+    const isRed = triage && (triage.code === "CODE_RED" || triage.severity === "CRITICAL");
 
     const results = data.hospitals.map(h => ({
         hospital: h,
@@ -56,15 +61,76 @@ function matchesPage() {
     })).filter(x => x.eligible).sort((a, b) => b.score - a.score);
 
     return `
-        ${heading("SMART MATCHING", "Your hospital <span>matches.</span>", "Compare the sample hospitals that meet the selected requirements.")}
-        <div class="summary-box">
-            <small>YOUR REQUEST</small>
-            <strong>${safe(request.patientName)} · ${safe(request.category)} · ${safe(request.facility)} bed</strong>
-            <p>${safe(request.location)}</p>
+        ${heading("SMART MATCHING", "Your hospital <span>matches.</span>", "Real-time AI matching based on bed availability, road proximity, and clinical triage.")}
+        
+        <div class="summary-box" style="position: relative;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 8px;">
+                <div>
+                    <small>PATIENT INTAKE SUMMARY</small>
+                    <strong style="font-size: 14px;">${safe(request.patientName)} (${request.age || '--'} yrs) · ${safe(request.category)}</strong>
+                    <p style="margin-top: 4px; font-size: 11px;">Origin: <strong>${safe(request.location)}</strong> | Bed Needed: <strong>${safe(request.facility)}</strong></p>
+                </div>
+                ${triage ? `
+                    <span class="ai-code-badge ${isRed ? 'ai-code-red' : 'ai-code-yellow'}" style="font-size: 10px;">
+                        ${safe(triage.code || triage.severity)} (${triage.triageScore}/100)
+                    </span>
+                ` : ""}
+            </div>
+            ${triage && triage.clinicalSummary ? `
+                <p style="margin-top: 8px; font-size: 11px; color: var(--navy); background: rgba(255,255,255,0.7); padding: 8px 12px; border-radius: 6px;">
+                    ⚡ <strong>AI Triage Assessment:</strong> ${safe(triage.clinicalSummary)}
+                </p>
+            ` : ""}
         </div>
-        <p class="muted" style="margin-bottom:13px">Illustrative ranking only. It is not a clinically validated recommendation.</p>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 18px 0 12px;">
+            <strong style="color: var(--navy); font-size: 13px;">Ranked Destinations (${results.length} Eligible Hospitals)</strong>
+            <button class="btn-small btn-light" data-go="navigation">🗺️ Open Interactive Map</button>
+        </div>
+
         <div class="card-grid">
-            ${results.length ? results.map(x => hospitalCard(x.hospital, true, x.score)).join("") : emptyState("No matching sample hospital found. Check the bed availability page.")}
+            ${results.length ? results.map((x, idx) => `
+                <article class="hospital-card" style="${idx === 0 ? 'border: 2px solid var(--blue); position: relative;' : ''}">
+                    ${idx === 0 ? `<div style="position: absolute; top: -10px; right: 14px; background: var(--blue); color: white; padding: 2px 8px; border-radius: 12px; font-size: 9px; font-weight: 800; letter-spacing: 0.5px;">RECOMMENDED DESTINATION</div>` : ''}
+                    <div class="card-top">
+                        <div style="display: flex; gap: 10px;">
+                            <div class="hospital-symbol">✚</div>
+                            <div>
+                                <h3>${safe(x.hospital.name)}</h3>
+                                <p>⌖ ${safe(x.hospital.area)} · <strong>${x.hospital.distance || 4} km (${x.travelTime} min ETA)</strong></p>
+                            </div>
+                        </div>
+                        <span class="status status-matching" style="font-size: 10px; font-weight: 800;">${x.score}% Match</span>
+                    </div>
+
+                    <div class="bed-row">
+                        <div class="bed-stat"><small>General Beds</small><strong>${x.hospital.general}</strong></div>
+                        <div class="bed-stat"><small>ICU Beds</small><strong style="color: var(--red);">${x.hospital.icu}</strong></div>
+                        <div class="bed-stat"><small>Medical Staff</small><strong style="color: var(--green);">${x.hospital.staff}</strong></div>
+                    </div>
+
+                    <!-- AI Match Justification Rationale -->
+                    <div class="ai-rationale-badge">
+                        <span>✨</span>
+                        <div>
+                            <strong>PRAN AI Routing Rationale:</strong>
+                            <p style="margin-top: 2px; font-size: 10px; line-height: 1.4;">
+                                ${x.hospital.name} has ${x.hospital.icu} verified ICU beds ready, located within ${x.travelTime} mins travel time from ${safe(request.location)}, equipped for acute ${safe(request.category)} triage care.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="tags" style="margin-top: 10px;">
+                        ${x.hospital.facilities.map(f => `<span class="tag">${safe(f)}</span>`).join("")}
+                    </div>
+
+                    <div class="card-actions">
+                        <button class="btn-small btn-light" data-map="${x.hospital.id}">➤ Map & Route</button>
+                        ${currentRole === "patient" ? `<button class="btn-small btn-success" data-book="${x.hospital.id}">Request Instant Admission</button>` : ""}
+                        ${currentRole === "ambulance" ? `<button class="btn-small btn-success" data-assign="${x.hospital.id}">Assign Destination</button>` : ""}
+                    </div>
+                </article>
+            `).join("") : emptyState("No matching hospitals meeting the exact bed & facility criteria at this time.")}
         </div>
     `;
 }

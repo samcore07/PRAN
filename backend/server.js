@@ -12,6 +12,7 @@ const { handleAuthRoutes } = require("./routes/auth");
 const { handleHospitalRoutes } = require("./routes/hospitals");
 const { handleRequestRoutes } = require("./routes/requests");
 const { handleTriageRoutes } = require("./routes/triage");
+const { handleAiRoutes } = require("./routes/ai");
 
 const PORT = process.env.PORT || 5001;
 const DB_FILE = path.join(__dirname, "data", "db.json");
@@ -102,6 +103,10 @@ const server = http.createServer((req, res) => {
                     "GET  /api/health",
                     "GET  /api/supabase/status",
                     "GET  /api/supabase/config",
+                    "GET  /api/ai/status",
+                    "POST /api/ai/triage",
+                    "POST /api/ai/copilot",
+                    "POST /api/ai/match-rationale",
                     "POST /api/auth/login",
                     "POST /api/auth/guest",
                     "GET  /api/hospitals",
@@ -133,6 +138,13 @@ const server = http.createServer((req, res) => {
         }
 
         // Dispatch routes
+        const aiResult = await handleAiRoutes(req, res, pathname, body, db);
+        if (aiResult) {
+            res.writeHead(aiResult.status, { "Content-Type": "application/json" });
+            res.end(JSON.stringify(aiResult.data));
+            return;
+        }
+
         const authResult = handleAuthRoutes(req, res, pathname, body);
         if (authResult) {
             res.writeHead(authResult.status, { "Content-Type": "application/json" });

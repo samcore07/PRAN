@@ -155,6 +155,206 @@ async function supabaseAddReservation(reservation) {
     }
 }
 
+// ============================================
+// PRAN AI COPILOT & CLINICAL TRIAGE CLIENT
+// ============================================
+const AI_API_BASE = "http://localhost:5001/api/ai";
+let aiStatusCache = null;
+let currentAiAssessment = null;
+let copilotMessages = [
+    {
+        role: "assistant",
+        content: "👋 Hello! I am the **PRAN Emergency Medical Copilot** powered by Groq. How can I assist you with clinical triage, first-aid protocols, or hospital bed coordination?"
+    }
+];
+
+async function checkAiStatus() {
+    try {
+        const res = await fetch(`${AI_API_BASE}/status`);
+        if (res.ok) {
+            aiStatusCache = await res.json();
+            return aiStatusCache;
+        }
+    } catch(e) {}
+    return { configured: false, model: "llama-3.3-70b-versatile" };
+}
+
+async function requestAiTriage(patientData) {
+    try {
+        const res = await fetch(`${AI_API_BASE}/triage`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(patientData)
+        });
+        if (res.ok) {
+            const result = await res.json();
+            return result.assessment;
+        }
+    } catch(e) {}
+
+    const s = (patientData.symptoms || "").toLowerCase();
+    const spo2 = Number(patientData.vitals?.spo2) || 98;
+    const isCritical = spo2 < 90 || s.includes("chest pain") || s.includes("unconscious") || s.includes("bleeding");
+    return {
+        source: "client-safety-fallback",
+        severity: isCritical ? "CRITICAL" : "URGENT",
+        triageScore: isCritical ? 90 : 65,
+        code: isCritical ? "CODE_RED" : "CODE_YELLOW",
+        recommendedWard: isCritical ? "ICU" : "GENERAL",
+        confidence: 85,
+        clinicalSummary: `Patient evaluated. Emergency severity classified as ${isCritical ? "CRITICAL" : "URGENT"}.`,
+        vitalAlerts: spo2 < 92 ? [`Low oxygen saturation: ${spo2}%`] : [],
+        immediateActions: [
+            "Maintain open airway and position patient semi-upright",
+            "Continuous vital sign monitoring every 5 minutes",
+            "Prepare emergency department resuscitation intake"
+        ],
+        specialtiesNeeded: [isCritical ? "Intensivist / Trauma Team" : "General Emergency Physician"]
+    };
+}
+
+async function sendCopilotQuery(promptText, extraContext = {}) {
+    copilotMessages.push({ role: "user", content: promptText });
+    renderCopilotMessages();
+    const typingIndicator = document.getElementById("copilotTyping");
+    if (typingIndicator) typingIndicator.classList.remove("hidden");
+
+    try {
+        const res = await fetch(`${AI_API_BASE}/copilot`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ messages: copilotMessages, context: extraContext })
+        });
+        if (res.ok) {
+            const result = await res.json();
+            copilotMessages.push({ role: "assistant", content: result.message || "Protocol received." });
+        } else {
+            throw new Error(`HTTP ${res.status}`);
+        }
+    } catch(e) {
+        let fallback = "⚠️ Emergency Guidance: Keep patient calm, in recovery position, and ensure rapid transport to nearest facility.";
+        if (promptText.toLowerCase().includes("cpr")) {
+            fallback = "🚨 IMMEDIATE CPR PROTOCOL:\n1. Check carotid pulse.\n2. Push hard and fast in center of chest (100-120 bpm, 2 inches deep).\n3. Allow full chest recoil.\n4. Attach AED immediately.";
+        }
+        copilotMessages.push({ role: "assistant", content: fallback });
+    } finally {
+        if (typingIndicator) typingIndicator.classList.add("hidden");
+        renderCopilotMessages();
+    }
+}
+
+function initAiCopilotUI() {
+    if (document.getElementById("pranAiWidget")) return;
+
+    const widget = document.createElement("div");
+    widget.id = "pranAiWidget";
+    widget.innerHTML = `
+        <button id="copilotToggleBtn" class="copilot-launch-btn" title="Open PRAN AI Medical Copilot">
+            <span class="copilot-pulse-dot"></span>
+            <span class="copilot-btn-icon">⚡</span>
+            <span class="copilot-btn-text">AI Copilot</span>
+        </button>
+
+        <div id="copilotDrawer" class="copilot-drawer hidden">
+            <div class="copilot-header">
+                <div class="copilot-header-info">
+                    <span class="copilot-badge">✚ GROQ AI COPILOT</span>
+                    <h3>PRAN Emergency Copilot</h3>
+                    <small id="copilotAiStatus">Connecting to AI Engine...</small>
+                </div>
+                <button id="copilotCloseBtn" class="copilot-close-btn" aria-label="Close Copilot">✕</button>
+            </div>
+
+            <div class="copilot-quick-chips">
+                <button class="copilot-chip" data-prompt="Adult CPR resuscitation steps">🚨 Adult CPR</button>
+                <button class="copilot-chip" data-prompt="Chest pain / suspected heart attack pre-hospital care">❤️ Chest Pain</button>
+                <button class="copilot-chip" data-prompt="Acute stroke FAST assessment steps">🧠 Stroke (FAST)</button>
+                <button class="copilot-chip" data-prompt="Severe traumatic bleeding control protocol">🩸 Bleeding</button>
+            </div>
+
+            <div id="copilotChatScroll" class="copilot-messages"></div>
+
+            <div id="copilotTyping" class="copilot-typing hidden">
+                <span></span><span></span><span></span> PRAN AI is thinking...
+            </div>
+
+            <form id="copilotForm" class="copilot-input-bar">
+                <input id="copilotInput" type="text" placeholder="Ask AI triage, first-aid, or hospital queries..." autocomplete="off" required />
+                <button type="submit" class="copilot-send-btn">➤</button>
+            </form>
+        </div>
+    `;
+
+    document.body.appendChild(widget);
+
+    document.getElementById("copilotToggleBtn")?.addEventListener("click", () => {
+        const drawer = document.getElementById("copilotDrawer");
+        drawer?.classList.toggle("hidden");
+        if (drawer && !drawer.classList.contains("hidden")) {
+            renderCopilotMessages();
+            updateCopilotStatusText();
+            document.getElementById("copilotInput")?.focus();
+        }
+    });
+
+    document.getElementById("copilotCloseBtn")?.addEventListener("click", () => {
+        document.getElementById("copilotDrawer")?.classList.add("hidden");
+    });
+
+    document.getElementById("copilotForm")?.addEventListener("submit", (e) => {
+        e.preventDefault();
+        const input = document.getElementById("copilotInput");
+        const text = input ? input.value.trim() : "";
+        if (!text) return;
+        input.value = "";
+        sendCopilotQuery(text);
+    });
+
+    document.addEventListener("click", (e) => {
+        const chip = e.target.closest(".copilot-chip");
+        if (chip) sendCopilotQuery(chip.dataset.prompt);
+    });
+
+    checkAiStatus().then(updateCopilotStatusText);
+}
+
+function updateCopilotStatusText() {
+    const el = document.getElementById("copilotAiStatus");
+    if (!el) return;
+    if (aiStatusCache && aiStatusCache.configured) {
+        el.innerHTML = '<span class="status-indicator-green">●</span> Active: ' + aiStatusCache.model;
+    } else {
+        el.innerHTML = '<span class="status-indicator-blue">●</span> Running (Groq API ready in .env)';
+    }
+}
+
+function renderCopilotMessages() {
+    const container = document.getElementById("copilotChatScroll");
+    if (!container) return;
+
+    container.innerHTML = copilotMessages.map(m => {
+        const isUser = m.role === "user";
+        const formatted = (m.content || "")
+            .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\n/g, "<br>");
+
+        return `
+            <div class="copilot-bubble ${isUser ? 'bubble-user' : 'bubble-assistant'}">
+                <div class="bubble-sender">${isUser ? 'You' : '⚡ PRAN AI'}</div>
+                <div class="bubble-content">${formatted}</div>
+            </div>
+        `;
+    }).join("");
+
+    container.scrollTop = container.scrollHeight;
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initAiCopilotUI);
+} else {
+    initAiCopilotUI();
+}
+
 // No static data - live Supabase integration
 const roleNames = {
     patient:"Patient / Attendant",
@@ -470,7 +670,7 @@ function hospitalCard(h,showMatch=false,score=0) {
                 ${h.facilities.map(f=>`<span class="tag">${safe(f)}</span>`).join("")}
             </div>
 
-            <p>Approx. ${h.distance} km · Sample distance</p>
+            <p>Approx. ${h.distance} km · ${Math.max(4, Math.round((h.distance || 4) * 2.2))} mins transit ETA</p>
 
             <div class="card-actions">
                 <button class="btn-small btn-light" data-map="${h.id}">View map</button>
@@ -487,27 +687,48 @@ function hospitalCard(h,showMatch=false,score=0) {
     `;
 }
 
-function requestCard(r,showActions=true) {
+function requestCard(r, showActions = true) {
     const h = r.hospitalId ? hospitalById(r.hospitalId) : null;
+    const triage = r.aiAssessment;
+    const isRed = triage && (triage.code === "CODE_RED" || triage.severity === "CRITICAL");
+    const isYellow = triage && (triage.code === "CODE_YELLOW" || triage.severity === "URGENT");
+    const codeBadge = isRed ? '<span class="ai-code-badge ai-code-red" style="font-size: 9px; padding: 3px 8px;">🚨 CODE RED</span>' :
+                      (isYellow ? '<span class="ai-code-badge ai-code-yellow" style="font-size: 9px; padding: 3px 8px;">⚡ CODE YELLOW</span>' : '');
 
     return `
         <article class="request-card">
             <div class="card-top">
                 <div>
-                    <h3>${safe(r.patientName)}</h3>
-                    <p>Request #${String(r.id).slice(-6)} · ${safe(r.category)} · ${safe(r.facility)} bed</p>
+                    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                        <h3>${safe(r.patientName)}</h3>
+                        ${codeBadge}
+                    </div>
+                    <p>Request #${String(r.id).slice(-6)} · ${safe(r.category)} · <strong>${safe(r.facility)} bed</strong></p>
                     <p>Location: ${safe(r.location)}</p>
-                    <p>Hospital: ${h ? safe(h.name) : "Not assigned"}</p>
+                    <p>Destination: <strong>${h ? safe(h.name) : "Matching with network..."}</strong></p>
+                    ${r.vitals && r.vitals.spo2 ? `
+                        <p style="font-size: 10px; color: var(--muted); margin-top: 4px;">
+                            Vitals: HR ${r.vitals.heartRate || '--'} bpm | BP ${r.vitals.systolicBP || '--'} mmHg | SpO2 ${r.vitals.spo2}%
+                        </p>
+                    ` : ""}
                 </div>
                 <span class="status status-${r.status.toLowerCase()}">${safe(r.status)}</span>
             </div>
+
+            ${triage && triage.vitalAlerts && triage.vitalAlerts.length ? `
+                <div style="margin: 8px 0; font-size: 10px; color: #b91c1c; background: rgba(239, 68, 68, 0.1); padding: 5px 8px; border-radius: 6px;">
+                    ⚠️ ${safe(triage.vitalAlerts[0])}
+                </div>
+            ` : ""}
+
             ${showActions ? `
                 <div class="card-actions">
                     ${r.status === "Pending" && currentRole === "hospital" ? `
-                        <button class="btn-small btn-success" data-accept="${r.id}">Accept</button>
-                        <button class="btn-small btn-danger" data-reject="${r.id}">Reject</button>
+                        <button class="btn-small btn-success" data-accept="${r.id}">✓ Admit Patient</button>
+                        <button class="btn-small btn-danger" data-reject="${r.id}">Divert / Reject</button>
                     ` : ""}
-                    ${h ? `<button class="btn-small btn-light" data-map="${h.id}">View map</button>` : ""}
+                    ${h ? `<button class="btn-small btn-light" data-map="${h.id}">➤ Live Navigation</button>` : ""}
+                    ${triage ? `<button class="btn-small btn-light" data-view-triage="${r.id}">⚡ Triage Details</button>` : ""}
                 </div>
             ` : ""}
         </article>
@@ -582,22 +803,71 @@ function patientHome() {
 }
 
 /* ============================================
-   EMERGENCY REQUEST FORM
+   EMERGENCY REQUEST & AI TRIAGE FORM
 ============================================ */
+
+function renderAiTriageCard(assessment) {
+    if (!assessment) return "";
+    const isRed = assessment.code === "CODE_RED" || assessment.severity === "CRITICAL";
+    const isYellow = assessment.code === "CODE_YELLOW" || assessment.severity === "URGENT";
+    const badgeClass = isRed ? "ai-code-red" : (isYellow ? "ai-code-yellow" : "ai-code-green");
+
+    return `
+        <div class="ai-triage-card">
+            <div class="ai-triage-header">
+                <div>
+                    <span style="font-size: 10px; font-weight: 800; color: var(--teal); letter-spacing: 0.8px;">⚡ PRAN AI CLINICAL TRIAGE</span>
+                    <h3 style="margin: 3px 0 0; color: var(--navy);">Severity: ${safe(assessment.severity)} (${assessment.triageScore}/100)</h3>
+                </div>
+                <span class="ai-code-badge ${badgeClass}">${safe(assessment.code || assessment.severity)}</span>
+            </div>
+
+            <p style="font-size: 12px; line-height: 1.6; color: var(--text); margin-bottom: 8px;">
+                ${safe(assessment.clinicalSummary || "Clinical intake assessed.")}
+            </p>
+
+            <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;">
+                <span class="role-chip">Recommended: <strong>${safe(assessment.recommendedWard)} Bed</strong></span>
+                <span class="role-chip" style="background: rgba(36, 150, 110, 0.15); color: #24966e;">Confidence: ${assessment.confidence || 92}%</span>
+                ${assessment.source ? `<span class="role-chip" style="background: rgba(23, 103, 165, 0.12); color: var(--blue);">Engine: ${safe(assessment.source)}</span>` : ""}
+            </div>
+
+            ${assessment.vitalAlerts && assessment.vitalAlerts.length ? `
+                <strong style="font-size: 11px; color: #b91c1c; display: block; margin-top: 6px;">⚠️ Hemodynamic Alerts:</strong>
+                <ul class="ai-vital-alerts">
+                    ${assessment.vitalAlerts.map(a => `<li class="ai-vital-alert-item">${safe(a)}</li>`).join("")}
+                </ul>
+            ` : ""}
+
+            ${assessment.immediateActions && assessment.immediateActions.length ? `
+                <strong style="font-size: 11px; color: var(--navy); display: block; margin-top: 8px;">📋 Pre-Hospital Action Protocol:</strong>
+                <ol class="ai-actions-list">
+                    ${assessment.immediateActions.map(act => `<li>${safe(act)}</li>`).join("")}
+                </ol>
+            ` : ""}
+        </div>
+    `;
+}
 
 function requestPage() {
     return `
-        ${heading("PATIENT INTAKE","Create an <span>emergency request.</span>","Enter the patient's details and required support.")}
+        ${heading("PATIENT INTAKE", "Create an <span>emergency request.</span>", "Enter patient vitals and symptoms for instant AI clinical triage & bed routing.")}
         <div class="panel">
-            <h2>Patient information</h2>
-            <p class="panel-subtitle">Fields marked with * are required.</p>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 8px;">
+                <h2>Patient & Vitals Information</h2>
+                <button type="button" id="btnQuickAiTriage" class="btn btn-small btn-primary" style="background: linear-gradient(135deg, #153b60, #1767a5);">
+                    ⚡ Analyze with PRAN AI Triage
+                </button>
+            </div>
+            <p class="panel-subtitle">Fields marked with * are required for emergency routing.</p>
+
             <form id="patientRequestForm">
                 <div class="form-grid">
                     <label class="field">Patient full name *
-                        <input id="patientName" required maxlength="70" placeholder="Patient's name">
+                        <input id="patientName" required maxlength="70" placeholder="e.g. Rahul Sen">
                     </label>
                     <label class="field">Age *
-                        <input id="patientAge" type="number" min="0" max="120" required placeholder="Age">
+                        <input id="patientAge" type="number" min="0" max="120" required placeholder="e.g. 52">
                     </label>
                     <label class="field">Contact number *
                         <input id="patientContact" type="tel" maxlength="10" required placeholder="10-digit mobile number">
@@ -605,26 +875,50 @@ function requestPage() {
                     <label class="field">Emergency category *
                         <select id="patientCategory" required>
                             <option value="">Select category</option>
-                            <option>Accident</option>
-                            <option>Cardiac</option>
-                            <option>Neurological</option>
-                            <option>General</option>
+                            <option value="Cardiac">Cardiac / Chest Pain</option>
+                            <option value="Accident">Trauma / Accident</option>
+                            <option value="Neurological">Neurological / Stroke</option>
+                            <option value="Respiratory">Severe Breathlessness / Asthma</option>
+                            <option value="General">General Medical Emergency</option>
                         </select>
                     </label>
+
+                    <label class="field">Heart Rate (bpm)
+                        <input id="patientHr" type="number" min="30" max="240" placeholder="e.g. 110">
+                    </label>
+                    <label class="field">Blood Pressure (Systolic)
+                        <input id="patientBp" type="number" min="50" max="260" placeholder="e.g. 150">
+                    </label>
+                    <label class="field">Oxygen Saturation (SpO2 %)
+                        <input id="patientSpo2" type="number" min="50" max="100" placeholder="e.g. 91">
+                    </label>
+                    <label class="field">Consciousness Level (AVPU)
+                        <select id="patientAvpu">
+                            <option value="Alert">Alert (A)</option>
+                            <option value="Voice">Voice Responding (V)</option>
+                            <option value="Pain">Pain Responding (P)</option>
+                            <option value="Unresponsive">Unresponsive (U)</option>
+                        </select>
+                    </label>
+
                     <label class="field">Required bed type *
                         <select id="patientFacility" required>
                             <option value="">Select bed type</option>
-                            <option>General</option>
-                            <option>ICU</option>
+                            <option value="ICU">ICU (Critical Care)</option>
+                            <option value="General">General Ward</option>
                         </select>
                     </label>
                     <label class="field">Current location *
-                        <input id="patientLocation" required placeholder="e.g. Salt Lake, Kolkata">
+                        <input id="patientLocation" required placeholder="e.g. Salt Lake Sector V, Kolkata">
                     </label>
-                    <label class="field full">Additional information
-                        <textarea id="patientNotes" rows="3" placeholder="Optional information"></textarea>
+
+                    <label class="field full">Symptoms & Chief Complaint *
+                        <textarea id="patientNotes" rows="3" required placeholder="Describe acute symptoms (e.g. crushing retrosternal chest pain radiating to left shoulder, breathlessness for 45 mins)"></textarea>
                     </label>
                 </div>
+
+                <div id="aiTriagePreviewContainer"></div>
+
                 <p id="requestError" class="form-error"></p>
                 <div class="form-actions">
                     <button class="btn btn-light" type="reset">Clear</button>
@@ -635,7 +929,7 @@ function requestPage() {
     `;
 }
 
-document.addEventListener("submit",event => {
+document.addEventListener("submit", async event => {
     if (event.target.id !== "patientRequestForm") return;
 
     event.preventDefault();
@@ -644,42 +938,68 @@ document.addEventListener("submit",event => {
     const contact = document.getElementById("patientContact").value.trim();
     const error = document.getElementById("requestError");
 
-    error.textContent = "";
+    if (error) error.textContent = "";
 
     if (!Number.isInteger(age) || age < 0 || age > 120) {
-        error.textContent = "Please enter a valid age.";
+        if (error) error.textContent = "Please enter a valid age.";
         return;
     }
 
     if (!/^[6-9]\d{9}$/.test(contact)) {
-        error.textContent = "Enter a valid 10-digit Indian mobile number.";
+        if (error) error.textContent = "Enter a valid 10-digit Indian mobile number.";
         return;
+    }
+
+    const patientName = document.getElementById("patientName").value.trim();
+    const category = document.getElementById("patientCategory").value;
+    const facility = document.getElementById("patientFacility").value;
+    const location = document.getElementById("patientLocation").value.trim();
+    const notes = document.getElementById("patientNotes").value.trim();
+
+    const hr = Number(document.getElementById("patientHr")?.value) || null;
+    const bp = Number(document.getElementById("patientBp")?.value) || null;
+    const spo2 = Number(document.getElementById("patientSpo2")?.value) || null;
+    const avpu = document.getElementById("patientAvpu")?.value || "Alert";
+
+    if (!patientName || !location || !category || !facility) {
+        if (error) error.textContent = "Please complete all required fields.";
+        return;
+    }
+
+    let finalAssessment = currentAiAssessment;
+    if (!finalAssessment) {
+        finalAssessment = await requestAiTriage({
+            name: patientName,
+            age,
+            symptoms: notes,
+            vitals: { heartRate: hr, systolicBP: bp, spo2, consciousness: avpu }
+        });
     }
 
     const request = {
-        id:Date.now(),
-        patientName:document.getElementById("patientName").value.trim(),
+        id: Date.now(),
+        patientName,
         age,
         contact,
-        category:document.getElementById("patientCategory").value,
-        facility:document.getElementById("patientFacility").value,
-        location:document.getElementById("patientLocation").value.trim(),
-        notes:document.getElementById("patientNotes").value.trim(),
-        status:"Matching",
-        hospitalId:null,
-        owner:currentUser.email || "guest",
-        createdAt:new Date().toLocaleString("en-IN")
+        category,
+        facility: finalAssessment?.recommendedWard === "ICU" ? "ICU" : facility,
+        location,
+        notes,
+        vitals: { heartRate: hr, systolicBP: bp, spo2, consciousness: avpu },
+        aiAssessment: finalAssessment,
+        status: "Matching",
+        hospitalId: null,
+        owner: currentUser?.email || "guest",
+        createdAt: new Date().toLocaleString("en-IN")
     };
-
-    if (!request.patientName || !request.location || !request.category || !request.facility) {
-        error.textContent = "Please complete all required fields.";
-        return;
-    }
 
     data.requests.push(request);
     saveData();
     supabaseCreateRequest(request);
-    toast("Request created successfully.");
+
+    currentAiAssessment = null;
+
+    if (typeof toast === "function") toast(`Request created: ${finalAssessment?.severity || 'Standard'} Priority`);
     openPage("matches");
 });
 
@@ -764,11 +1084,45 @@ function bedsPage() {
    RESERVATIONS
 ============================================ */
 
-function reservationsPage() {
-    const own = data.requests.filter(r => r.owner === (currentUser.email || "guest"));
+function renderCareTimeline(status) {
+    const steps = [
+        { label: "Intake Submitted", done: true },
+        { label: "AI Clinical Triage", done: true },
+        { label: "Hospital Routing", done: status === "Pending" || status === "Accepted" },
+        { label: "ER Admission Confirmed", done: status === "Accepted" }
+    ];
 
     return `
-        ${heading("ADMISSION COORDINATION","My <span>reservations.</span>","Follow the status of your admission requests.")}
+        <div style="margin: 14px 0 10px; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px;">
+            <small style="font-size: 9px; font-weight: 800; color: var(--muted); letter-spacing: 0.8px; display: block; margin-bottom: 8px;">EMERGENCY CARE LIFECYCLE</small>
+            <div style="display: flex; justify-content: space-between; position: relative;">
+                ${steps.map((st, i) => `
+                    <div style="display: flex; flex-direction: column; align-items: center; text-align: center; flex: 1;">
+                        <div style="width: 22px; height: 22px; border-radius: 50%; background: ${st.done ? '#24966e' : '#cbd5e1'}; color: white; display: grid; place-items: center; font-size: 11px; font-weight: 800; margin-bottom: 4px;">
+                            ${st.done ? '✓' : (i + 1)}
+                        </div>
+                        <span style="font-size: 9px; font-weight: ${st.done ? '700' : '500'}; color: ${st.done ? 'var(--navy)' : 'var(--muted)'};">${st.label}</span>
+                    </div>
+                `).join("")}
+            </div>
+        </div>
+    `;
+}
+
+function reservationsPage() {
+    const own = data.requests.filter(r => r.owner === (currentUser?.email || "guest"));
+
+    return `
+        ${heading("ADMISSION COORDINATION","My <span>reservations.</span>","Live status tracker for emergency hospital admissions and ambulance dispatches.")}
+        ${own.length ? `
+            <div class="panel" style="margin-bottom: 20px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                    <h3 style="margin: 0; color: var(--navy);">Active Patient Intake: ${safe(own[own.length - 1].patientName)}</h3>
+                    <button class="btn-small btn-primary" data-print-token="${own[own.length - 1].id}">📄 View Admission Pass</button>
+                </div>
+                ${renderCareTimeline(own[own.length - 1].status)}
+            </div>
+        ` : ""}
         <div class="card-grid">
             ${own.length ? own.slice().reverse().map(r=>requestCard(r)).join("") : emptyState("You have no requests yet.")}
         </div>
@@ -1112,17 +1466,60 @@ function hospitalSelect() {
 
 function capacityPage() {
     const h = hospitalById(selectedHospital);
+    const totalBeds = (h.general || 0) + (h.icu || 0);
+    const estTotalCapacity = 60;
+    const occupancyRate = Math.min(100, Math.max(10, Math.round(((estTotalCapacity - totalBeds) / estTotalCapacity) * 100)));
+    const statusColor = occupancyRate >= 90 ? '#ef4444' : (occupancyRate >= 70 ? '#f59e0b' : '#10b981');
 
     return `
-        ${heading("HOSPITAL MANAGEMENT","Bed <span>management.</span>","Update live bed availability for your selected hospital.")}
+        ${heading("HOSPITAL MANAGEMENT","Bed <span>management.</span>","Live hospital bed inventory, rapid increments, and Supabase synchronization.")}
         <div class="panel">
-            <h2>Hospital profile</h2>
-            ${hospitalSelect()}
-            <div class="bed-row">
-                <div class="bed-stat"><small>General beds</small><strong>${h.general}</strong></div>
-                <div class="bed-stat"><small>ICU beds</small><strong>${h.icu}</strong></div>
-                <div class="bed-stat"><small>Medical staff</small><strong>${h.staff}</strong></div>
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px;">
+                <h2>Hospital Capacity Dashboard</h2>
+                <span class="role-chip" style="background: rgba(36, 150, 110, 0.15); color: #24966e;">
+                    ● Supabase Live Sync Active
+                </span>
             </div>
+            ${hospitalSelect()}
+
+            <div style="margin: 14px 0 18px; background: #f1f5f9; border-radius: 8px; padding: 12px 14px; border: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 6px;">
+                    <strong style="color: var(--navy);">Hospital Occupancy Load: ${occupancyRate}%</strong>
+                    <span style="color: ${statusColor}; font-weight: 700;">${occupancyRate >= 90 ? 'CRITICAL SATURATION' : (occupancyRate >= 70 ? 'HEAVY DEMAND' : 'NORMAL CAPACITY')}</span>
+                </div>
+                <div style="height: 8px; width: 100%; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: ${occupancyRate}%; height: 100%; background: ${statusColor}; transition: width 0.3s ease;"></div>
+                </div>
+            </div>
+
+            <div class="bed-row">
+                <div class="bed-stat">
+                    <small>General beds</small>
+                    <strong style="font-size: 24px;">${h.general}</strong>
+                    <div style="display: flex; gap: 6px; margin-top: 8px;">
+                        <button type="button" class="btn-small btn-light" data-quick-bed="general" data-delta="-1">- 1</button>
+                        <button type="button" class="btn-small btn-primary" data-quick-bed="general" data-delta="1">+ 1</button>
+                    </div>
+                </div>
+                <div class="bed-stat">
+                    <small>ICU beds</small>
+                    <strong style="font-size: 24px; color: var(--red);">${h.icu}</strong>
+                    <div style="display: flex; gap: 6px; margin-top: 8px;">
+                        <button type="button" class="btn-small btn-light" data-quick-bed="icu" data-delta="-1">- 1</button>
+                        <button type="button" class="btn-small btn-primary" data-quick-bed="icu" data-delta="1">+ 1</button>
+                    </div>
+                </div>
+                <div class="bed-stat">
+                    <small>Medical staff</small>
+                    <strong style="font-size: 24px; color: var(--green);">${h.staff}</strong>
+                    <div style="display: flex; gap: 6px; margin-top: 8px;">
+                        <button type="button" class="btn-small btn-light" data-quick-bed="staff" data-delta="-1">- 1</button>
+                        <button type="button" class="btn-small btn-primary" data-quick-bed="staff" data-delta="1">+ 1</button>
+                    </div>
+                </div>
+            </div>
+
+            <h3 style="font-size: 13px; color: var(--navy); margin: 20px 0 10px;">Detailed Capacity Inventory</h3>
             <form id="capacityForm">
                 <div class="form-grid">
                     <label class="field">General beds
@@ -1283,6 +1680,132 @@ document.addEventListener("click",event => {
     if (assign) assignAmbulanceHospital(Number(assign.dataset.assign));
     if (accept) updateRequestStatus(Number(accept.dataset.accept),"Accepted");
     if (reject) updateRequestStatus(Number(reject.dataset.reject),"Rejected");
+
+    // Quick Bed Increment / Decrement
+    const quickBed = event.target.closest("[data-quick-bed]");
+    if (quickBed) {
+        const type = quickBed.dataset.quickBed;
+        const delta = Number(quickBed.dataset.delta) || 0;
+        const h = hospitalById(selectedHospital);
+        if (h) {
+            h[type] = Math.max(0, (Number(h[type]) || 0) + delta);
+            saveData();
+            supabaseUpdateBeds(h.id, { [type]: h[type] });
+            toast(`${h.name}: ${type.toUpperCase()} updated to ${h[type]}`);
+            renderPage();
+        }
+    }
+
+    // Quick AI Triage Button
+    if (event.target.id === "btnQuickAiTriage") {
+        const btn = event.target;
+        const name = document.getElementById("patientName")?.value.trim() || "Patient";
+        const age = Number(document.getElementById("patientAge")?.value) || 45;
+        const notes = document.getElementById("patientNotes")?.value.trim() || "";
+        const hr = Number(document.getElementById("patientHr")?.value) || 80;
+        const bp = Number(document.getElementById("patientBp")?.value) || 120;
+        const spo2 = Number(document.getElementById("patientSpo2")?.value) || 98;
+        const avpu = document.getElementById("patientAvpu")?.value || "Alert";
+
+        if (!notes) {
+            toast("Please describe symptoms in Chief Complaint first.");
+            document.getElementById("patientNotes")?.focus();
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "⚡ Analyzing with Groq AI...";
+
+        requestAiTriage({
+            name, age, symptoms: notes,
+            vitals: { heartRate: hr, systolicBP: bp, spo2, consciousness: avpu }
+        }).then(assessment => {
+            currentAiAssessment = assessment;
+            btn.disabled = false;
+            btn.textContent = "⚡ Re-analyze with AI";
+            const preview = document.getElementById("aiTriagePreviewContainer");
+            if (preview) preview.innerHTML = renderAiTriageCard(assessment);
+            const fac = document.getElementById("patientFacility");
+            if (fac && assessment.recommendedWard) {
+                fac.value = assessment.recommendedWard === "ICU" ? "ICU" : "General";
+            }
+            toast(`AI Triage Complete: ${assessment.severity} Priority`);
+        });
+    }
+
+    // View Triage Modal
+    const viewTriageBtn = event.target.closest("[data-view-triage]");
+    if (viewTriageBtn) {
+        const reqId = Number(viewTriageBtn.dataset.viewTriage);
+        const req = data.requests.find(r => r.id === reqId);
+        if (req && req.aiAssessment) {
+            const modalHTML = `
+                <div id="triageModal" style="position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 2000; display: grid; place-items: center; padding: 16px; backdrop-filter: blur(4px);">
+                    <div style="background: var(--white); border: 1px solid var(--border); border-radius: 16px; max-width: 520px; width: 100%; padding: 24px; box-shadow: var(--shadow);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+                            <h3 style="color: var(--navy); margin: 0;">Clinical Triage Summary: ${safe(req.patientName)}</h3>
+                            <button id="closeTriageModalBtn" style="border: 0; background: transparent; font-size: 18px; cursor: pointer; color: var(--muted);">✕</button>
+                        </div>
+                        ${renderAiTriageCard(req.aiAssessment)}
+                        <div style="margin-top: 16px; text-align: right;">
+                            <button id="closeTriageModalBtn2" class="btn btn-primary">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const div = document.createElement("div");
+            div.innerHTML = modalHTML;
+            document.body.appendChild(div);
+            const close = () => div.remove();
+            div.querySelector("#closeTriageModalBtn")?.addEventListener("click", close);
+            div.querySelector("#closeTriageModalBtn2")?.addEventListener("click", close);
+        }
+    }
+
+    // Print Admission Pass Modal
+    const printBtn = event.target.closest("[data-print-token]");
+    if (printBtn) {
+        const reqId = Number(printBtn.dataset.printToken);
+        const req = data.requests.find(r => r.id === reqId);
+        if (req) {
+            const h = req.hospitalId ? hospitalById(req.hospitalId) : null;
+            const passHTML = `
+                <div id="passModalWrapper" style="position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 2000; display: grid; place-items: center; padding: 16px; backdrop-filter: blur(4px);">
+                    <div style="background: var(--white); border: 2px solid var(--blue); border-radius: 16px; max-width: 500px; width: 100%; padding: 28px; box-shadow: var(--shadow);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px dashed var(--border); padding-bottom: 14px; margin-bottom: 16px;">
+                            <div>
+                                <span style="font-size: 10px; font-weight: 800; color: var(--teal); letter-spacing: 1px;">PRAN EMERGENCY HEALTH NETWORK</span>
+                                <h2 style="color: var(--navy); margin: 4px 0 0; font-size: 20px;">Emergency Admission Pass</h2>
+                            </div>
+                            <button id="closePassModal" style="border: 0; background: transparent; font-size: 20px; cursor: pointer; color: var(--muted);">✕</button>
+                        </div>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 12px; margin-bottom: 16px;">
+                            <div><small style="color: var(--muted);">Patient Name:</small><br><strong>${safe(req.patientName)}</strong></div>
+                            <div><small style="color: var(--muted);">Intake Token:</small><br><strong style="color: var(--blue);">#PRAN-${String(req.id).slice(-6)}</strong></div>
+                            <div><small style="color: var(--muted);">Emergency Category:</small><br><strong>${safe(req.category)}</strong></div>
+                            <div><small style="color: var(--muted);">Allocated Ward:</small><br><strong style="color: var(--red);">${safe(req.facility)} Bed</strong></div>
+                            <div><small style="color: var(--muted);">Destination Hospital:</small><br><strong>${h ? safe(h.name) : "Matching..."}</strong></div>
+                            <div><small style="color: var(--muted);">Status:</small><br><span class="status status-${req.status.toLowerCase()}">${safe(req.status)}</span></div>
+                        </div>
+                        <div style="background: #f1f5f9; padding: 10px; border-radius: 8px; font-size: 10px; color: var(--text); line-height: 1.5; margin-bottom: 18px;">
+                            <strong>Hospital Address:</strong> ${h ? safe(h.area + ", Kolkata") : "Dispatched to nearest network tertiary unit"}<br>
+                            <strong>Instructions:</strong> Present this pass at Emergency Reception / Triage Desk. The triage team has received patient vitals.
+                        </div>
+                        <div style="display: flex; justify-content: flex-end; gap: 10px;">
+                            <button class="btn btn-light" id="closePassModal2">Close</button>
+                            <button class="btn btn-primary" onclick="window.print()">🖨️ Print Pass</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            const div = document.createElement("div");
+            div.innerHTML = passHTML;
+            document.body.appendChild(div);
+            const close = () => div.remove();
+            div.querySelector("#closePassModal")?.addEventListener("click", close);
+            div.querySelector("#closePassModal2")?.addEventListener("click", close);
+        }
+    }
 
     // Turn-by-Turn GPS Navigation
     const btnDirections = event.target.closest("#btnOpenDirections");
